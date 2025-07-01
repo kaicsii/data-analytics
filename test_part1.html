@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>人工智慧基礎概論 - 模擬測驗 (Gemini版)</title>
+    <title>人工智慧基礎概論 - 模擬測驗</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -25,44 +25,15 @@
             border-color: #dc2626 !important;
         }
         [x-cloak] { display: none; }
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border-left-color: #09f;
-            animation: spin 1s ease infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .prose {
-            max-width: 65ch;
-            color: #374151;
-        }
-        .prose strong {
-            color: #111827;
-            font-weight: 600;
-        }
-        .prose pre {
-            background-color: #f3f4f6;
-            padding: 1em;
-            border-radius: 0.5rem;
-            overflow-x: auto;
-        }
-        .prose code {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-    <div x-data="quizApp" x-init="init" class="max-w-4xl mx-auto p-4 md:p-8">
+    <div x-data="quizApp()" x-init="init" class="max-w-4xl mx-auto p-4 md:p-8">
         <header class="text-center mb-8">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900">人工智慧基礎概論</h1>
-            <p class="text-lg text-gray-600 mt-2">模擬測驗 (Gemini 智慧增強版)</p>
+            <p class="text-lg text-gray-600 mt-2">模擬測驗</p>
         </header>
 
         <!-- 開始畫面 -->
@@ -138,9 +109,6 @@
                 <button @click="restartQuiz()" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors duration-300 shadow-md">
                     返回主畫面
                 </button>
-                <button @click="summarizeWeaknesses()" class="bg-purple-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-purple-700 transition-colors duration-300 shadow-md" :disabled="score === questions.length">
-                    總結我的弱點 ✨
-                </button>
             </div>
             
             <!-- 答案回顧 -->
@@ -167,27 +135,8 @@
                             <p class="font-bold">解析：</p>
                             <p x-text="question.explanation"></p>
                         </div>
-                        <!-- Gemini 功能按鈕 -->
-                        <div class="mt-4 flex flex-wrap gap-2">
-                            <button @click="getDeeperExplanation(index)" class="text-sm bg-indigo-100 text-indigo-700 py-1 px-3 rounded-full hover:bg-indigo-200 transition">深入解釋 ✨</button>
-                            <button @click="generateSimilarQuestion(index)" class="text-sm bg-teal-100 text-teal-700 py-1 px-3 rounded-full hover:bg-teal-200 transition">產生類似題目 ✨</button>
-                        </div>
                     </div>
                 </template>
-            </div>
-        </div>
-
-        <!-- Gemini Modal -->
-        <div x-show="showGeminiModal" @click.away="showGeminiModal = false" x-cloak class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6" @click.stop>
-                <h3 class="text-xl font-bold mb-4" x-text="geminiModalTitle"></h3>
-                <div x-show="isGeminiLoading" class="flex justify-center items-center h-48">
-                    <div class="spinner"></div>
-                </div>
-                <div x-show="!isGeminiLoading" class="prose max-w-none" x-html="geminiResponse"></div>
-                <div class="mt-6 text-right">
-                    <button @click="showGeminiModal = false" class="bg-gray-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-600 transition-colors">關閉</button>
-                </div>
             </div>
         </div>
     </div>
@@ -204,10 +153,6 @@
                 userAnswers: [],
                 questions: [],
                 wronglyAnsweredQuestions: [],
-                showGeminiModal: false,
-                isGeminiLoading: false,
-                geminiResponse: '',
-                geminiModalTitle: '',
                 
                 fullQuestionBank: [
                     // --- 人工智慧概念 ---
@@ -242,7 +187,18 @@
                     { id: 26, question: "變分自編碼器（Variational Autoencoders, VAE）是一種生成模型，它主要由哪兩部分組成？", options: ["A) 生成器與判別器", "B) 卷積層與池化層", "C) 編碼器與解碼器", "D) 策略網路與價值網路"], answer: "C) 編碼器與解碼器", explanation: "VAE透過一個編碼器將輸入數據壓縮到一個低維的潛在空間，再由一個解碼器從這個潛在空間中重建出數據。這個過程讓模型學會了數據的潛在結構，從而能夠生成新的數據。", category: "鑑別式AI與生成式AI概念" },
                     { id: 27, question: "提示工程（Prompt Engineering）主要與哪一種類型的AI密切相關？", options: ["A) 鑑別式AI", "B) 生成式AI", "C) 專家系統", "D) 傳統機器學習"], answer: "B) 生成式AI", explanation: "提示工程是指設計和優化輸入提示（Prompt），以引導大型生成式AI模型（如ChatGPT）產生期望的輸出。這是與生成式AI互動的核心技巧。", category: "鑑別式AI與生成式AI概念" },
                     { id: 28, question: "擴散模型（Diffusion Models）生成數據的基本原理是什麼？", options: ["A) 透過兩個網路相互對抗學習", "B) 透過逐步從隨機雜訊中去除雜訊來重建數據", "C) 透過建立一個機率圖模型來生成數據", "D) 透過尋找數據中的決策邊界來生成數據"], answer: "B) 透過逐步從隨機雜訊中去除雜訊來重建數據", explanation: "擴散模型首先在訓練階段向真實數據中逐步添加雜訊，然後學習一個反向過程，能夠從純粹的隨機雜訊開始，一步步地將雜訊去除，最終生成一個清晰、高品質的數據樣本。", category: "鑑別式AI與生成式AI概念" },
-                    { id: 29, question: "下列關於隨機森林（Random Forest）的敘述何者正確？", options: ["A) 它是一種生成式模型", "B) 它是一種非監督式學習演算法", "C) 它透過集成多棵決策樹來提高預測準確性與穩定性", "D) 它主要用於數據降維"], answer: "C) 它透過集成多棵決策樹來提高預測準確性與穩定性", explanation: "隨機森林是一種集成學習方法，它構建多個決策樹，並將它們的預測結果進行投票或平均，從而獲得比單一決策樹更好、更穩健的性能，屬於鑑別式AI的範疇。", category: "鑑別式AI與生成式AI概念" }
+                    { id: 29, question: "下列關於隨機森林（Random Forest）的敘述何者正確？", options: ["A) 它是一種生成式模型", "B) 它是一種非監督式學習演算法", "C) 它透過集成多棵決策樹來提高預測準確性與穩定性", "D) 它主要用於數據降維"], answer: "C) 它透過集成多棵決策樹來提高預測準確性與穩定性", explanation: "隨機森林是一種集成學習方法，它構建多個決策樹，並將它們的預測結果進行投票或平均，從而獲得比單一決策樹更好、更穩健的性能，屬於鑑別式AI的範疇。", category: "鑑別式AI與生成式AI概念" },
+                    { id: 30, question: "在診斷性分析中，「向下分析（Drill-down Analysis）」的主要目的是什麼？", options: ["A) 找出項目之間的共現關係", "B) 分析變量之間的因果關係", "C) 從宏觀數據逐層深入到細節層級以鎖定問題", "D) 預測未來的事件或趨勢"], answer: "C) 從宏觀數據逐層深入到細節層級以鎖定問題", explanation: "向下分析（Drill-down）是診斷性分析的一種方法，用於從總體數據開始，逐步深入到更詳細的分類（如地區、產品、時間），以找出問題的根本原因。", category: "資料處理與分析概念" },
+                    { id: 31, question: "在機器學習中，F1分數（F1 Score）這個評估指標代表什麼？", options: ["A) 模型預測的準確率", "B) 精確率（Precision）和召回率（Recall）的調和平均數，是一個綜合性指標", "C) 模型處理高維度數據的能力", "D) 模型訓練的速度"], answer: "B) 精確率（Precision）和召回率（Recall）的調和平均數，是一個綜合性指標", explanation: "F1分數同時考慮了精確率和召回率，特別適用於數據不平衡的分類問題，能提供比單純的準確率更全面的評估。", category: "機器學習概念" },
+                    { id: 32, question: "生成對抗網路（GAN）在訓練過程中可能遇到的「模式崩潰（Mode Collapse）」是指什麼情況？", options: ["A) 標記數據的成本過高", "B) 推論速度過慢", "C) 生成器只會產生種類非常有限的、單一的樣本", "D) 模型無法處理非線性數據"], answer: "C) 生成器只會產生種類非常有限的、單一的樣本", explanation: "模式崩潰是GAN訓練時的一個主要挑戰，指的是生成器找到了幾個能騙過判別器的樣本，並不斷重複生成它們，導致生成結果缺乏多樣性。", category: "鑑別式AI與生成式AI概念" },
+                    { id: 33, question: "下列何者是「AI治理（AI Governance）」的核心目標？", options: ["A) 最大化AI模型的計算能力", "B) 確保AI系統以透明、公平、可解釋和負責任的方式開發與使用", "C) 專注於提升AI預測的準確率，不考慮其他因素", "D) 將AI模型的決策過程完全保密以維持商業優勢"], answer: "B) 確保AI系統以透明、公平、可解釋和負責任的方式開發與使用", explanation: "AI治理旨在建立規範和框架，引導AI技術的健康發展，處理其可能帶來的倫理、社會和法律挑戰，確保其發展對人類有益。", category: "人工智慧概念" },
+                    { id: 34, question: "將連續型數據（如年齡）轉換為離散的區間或類別（如「青年」、「中年」、「老年」）的過程稱為什麼？", options: ["A) 數據正規化", "B) 數據縮減", "C) 數據離散化", "D) 數據聚合"], answer: "C) 數據離散化", explanation: "數據離散化是將連續變數轉換為分類變數的過程，這有助於簡化數據，並讓某些演算法（如決策樹）能更有效地處理。", category: "資料處理與分析概念" },
+                    { id: 35, question: "在機器學習模型訓練中，「提早停止（Early Stopping）」策略的主要用途是什麼？", options: ["A) 當模型在訓練集達到100%準確率時停止", "B) 當模型在驗證集上的表現開始下降時停止訓練，以防止過擬合", "C) 無論表現如何，都在固定的訓練次數後停止", "D) 加快訓練的初始階段"], answer: "B) 當模型在驗證集上的表現開始下降時停止訓練，以防止過擬合", explanation: "提早停止是一種正則化技巧，透過監控模型在獨立驗證集上的性能，在模型開始過擬合之前就停止訓練，以獲得更好的泛化能力。", category: "機器學習概念" },
+                    { id: 36, question: "下列哪個模型是典型的「鑑別式AI」模型？", options: ["A) 變分自編碼器 (VAE)", "B) 擴散模型 (Diffusion Models)", "C) 邏輯迴歸 (Logistic Regression)", "D) 生成對抗網路 (GAN)"], answer: "C) 邏輯迴歸 (Logistic Regression)", explanation: "邏輯迴歸直接學習輸入特徵與類別標籤之間的決策邊界，用於分類任務，是鑑別式模型的經典範例。其他選項皆為生成式模型。", category: "鑑別式AI與生成式AI概念" },
+                    { id: 37, question: "在金融領域中，人工智慧的一個常見應用為何？", options: ["A) 生成創意廣告文案", "B) 透過監控交易模式進行即時詐欺檢測", "C) 控制工廠中的機器手臂", "D) 優化城市的交通流量"], answer: "B) 透過監控交易模式進行即時詐欺檢測", explanation: "AI能夠快速分析大量交易數據，識別出與正常行為不符的異常模式，從而即時偵測並預警潛在的金融詐欺行為。", category: "人工智慧概念" },
+                    { id: 38, question: "哪一種數據蒐集方法涉及自動化地從網站上擷取公開資料？", options: ["A) 問卷與調查", "B) 向第三方數據商購買", "C) 使用內部產品數據", "D) 網路爬蟲 (Web Scraping)"], answer: "D) 網路爬蟲 (Web Scraping)", explanation: "網路爬蟲是一種程式，可以自動瀏覽網站並擷取其頁面上的公開資訊，是蒐集大量網路數據的常用方法。", category: "資料處理與分析概念" },
+                    { id: 39, question: "決策樹（Decision Tree）模型最主要的優勢是什麼？", options: ["A) 對於所有類型的數據都是最準確的模型", "B) 因為其決策規則易於理解，所以具有良好的可解釋性", "C) 它完全不會發生過擬合", "D) 它需要海量數據才能訓練"], answer: "B) 因為其決策規則易於理解，所以具有良好的可解釋性", explanation: "決策樹的樹狀結構類似於人類的決策流程圖，使其預測過程非常直觀且容易解釋，這在許多需要透明度的領域是一大優點。", category: "機器學習概念" },
+                    { id: 40, question: "設計有效的輸入（提示）來引導大型語言模型產生期望輸出的過程，稱之為什麼？", options: ["A) 特徵工程", "B) 超參數調整", "C) 提示工程", "D) 模型部署"], answer: "C) 提示工程", explanation: "提示工程（Prompt Engineering）是與大型生成式AI互動的一門藝術與科學，專注於如何建構提示以獲得更準確、更相關的輸出。", category: "鑑別式AI與生成式AI概念" }
                 ],
 
                 init() {
@@ -274,7 +230,7 @@
                     if (this.isReviewMode) {
                         this.questions = this.shuffleArray(this.wronglyAnsweredQuestions);
                     } else {
-                        this.questions = this.shuffleArray(this.fullQuestionBank).slice(0, 30);
+                        this.questions = this.shuffleArray(this.fullQuestionBank).slice(0, 40);
                     }
                     this.userAnswers = Array(this.questions.length).fill(null);
                     this.questions.forEach(q => q.correctlyAnswered = null);
@@ -297,7 +253,6 @@
                         this.currentAnswerStatus = 'correct';
                         currentQuestion.correctlyAnswered = true;
                         this.score++;
-                        // If in review mode and answered correctly, remove from wrong answers list
                         if (this.isReviewMode) {
                            this.wronglyAnsweredQuestions = this.wronglyAnsweredQuestions.filter(q => q.id !== currentQuestion.id);
                            this.saveWrongAnswers();
@@ -305,7 +260,6 @@
                     } else {
                         this.currentAnswerStatus = 'incorrect';
                         currentQuestion.correctlyAnswered = false;
-                        // If in normal mode, add to wrong answers list (if not already there)
                         if (!this.isReviewMode) {
                             const isAlreadyWrong = this.wronglyAnsweredQuestions.some(q => q.id === currentQuestion.id);
                             if (!isAlreadyWrong) {
@@ -332,85 +286,12 @@
                 restartQuiz() {
                     this.quizStarted = false;
                     this.quizFinished = false;
-                },
-                
-                async callGeminiAPI(prompt, isStructured = false, schema = null) {
-                    this.isGeminiLoading = true;
-                    this.geminiResponse = '';
-                    this.showGeminiModal = true;
-
-                    const apiKey = ""; // The environment will provide the key
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                    let payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
-                    if (isStructured && schema) {
-                        payload.generationConfig = { responseMimeType: "application/json", responseSchema: schema };
-                    }
-
-                    try {
-                        const response = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        if (!response.ok) throw new Error(`API 請求失敗，狀態碼： ${response.status}`);
-                        const result = await response.json();
-                        if (result.candidates && result.candidates[0]?.content?.parts[0]) {
-                            const text = result.candidates[0].content.parts[0].text;
-                            if (isStructured) return JSON.parse(text);
-                            return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-200 p-2 rounded"><code>$1</code></pre>').replace(/\n/g, '<br>');
-                        }
-                        return "無法從 API 獲取有效的回應。";
-                    } catch (error) {
-                        console.error("呼叫 Gemini API 時發生錯誤:", error);
-                        return `發生錯誤：${error.message}`;
-                    } finally {
-                        this.isGeminiLoading = false;
-                    }
-                },
-
-                async getDeeperExplanation(index) {
-                    const question = this.questions[index];
-                    this.geminiModalTitle = "深入解釋 ✨";
-                    const prompt = `請用更簡單、更生活化的方式，深入解釋以下這個AI概念。問題: "${question.question}" 正確答案: "${question.answer}" 原本的解析: "${question.explanation}" 請提供一個更詳細或用不同角度切入的解釋，讓初學者更容易理解這個概念的核心思想與應用。`;
-                    this.geminiResponse = await this.callGeminiAPI(prompt);
-                },
-
-                async generateSimilarQuestion(index) {
-                    const question = this.questions[index];
-                    this.geminiModalTitle = "類似題目生成 ✨";
-                    const prompt = `請根據以下主題，生成一個全新的、類似的單選題。主題/類別: "${question.category}" 請確保新題目的問題、選項、答案和解析都與原題目不同，但概念相關。請嚴格按照指定的JSON格式返回結果。`;
-                    const schema = { type: "OBJECT", properties: { question: { "type": "STRING" }, options: { type: "ARRAY", items: { "type": "STRING" } }, answer: { "type": "STRING" }, explanation: { "type": "STRING" } }, required: ["question", "options", "answer", "explanation"] };
-                    const newQ = await this.callGeminiAPI(prompt, true, schema);
-                    if (typeof newQ === 'object' && newQ.question) {
-                        this.geminiResponse = `<div class="border p-4 rounded-lg bg-gray-50"><p class="font-semibold mb-2">${newQ.question}</p><div class="space-y-2">${newQ.options.map(opt => `<div class="p-3 rounded-md text-sm bg-gray-100">${opt}</div>`).join('')}</div><div class="mt-3 p-3 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-r-lg"><p class="font-bold">答案：</p><p>${newQ.answer}</p><p class="font-bold mt-2">解析：</p><p>${newQ.explanation}</p></div></div>`;
-                    } else {
-                        this.geminiResponse = "無法生成新的題目，請稍後再試。";
-                    }
-                },
-
-                async summarizeWeaknesses() {
-                    let wrongAnswers = this.questions.filter(q => !q.correctlyAnswered);
-                    if (wrongAnswers.length === 0) {
-                        this.geminiModalTitle = "恭喜！";
-                        this.geminiResponse = "您本次測驗全部答對了，沒有需要總結的弱點！";
-                        this.showGeminiModal = true;
-                        return;
-                    }
-                    this.geminiModalTitle = "弱點分析與學習建議 ✨";
-                    const topics = wrongAnswers.map(q => q.category).join(', ');
-                    const prompt = `我剛剛完成了一個人工智慧基礎概論的測驗，以下是我答錯題目的主題列表：${topics}。請幫我分析我的主要弱點可能在哪裡，並提供一個簡潔、條列式的學習建議，幫助我針對這些弱點進行加強。請用繁體中文回答。`;
-                    this.geminiResponse = await this.callGeminiAPI(prompt);
                 }
             }
         }
-        // This script should be placed at the end of the body tag
         document.addEventListener('alpine:init', () => {
             Alpine.data('quizApp', quizApp);
         });
     </script>
 </body>
 </html>
-
-
-

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI應用規劃師 - 模擬測驗</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', 'Inter', sans-serif;
+        }
+        .quiz-option:disabled {
+            cursor: not-allowed;
+            opacity: 0.9;
+        }
+        .quiz-option.correct {
+            background-color: #22c55e !important; /* bg-green-500 */
+            color: white !important;
+            border-color: #16a34a !important;
+        }
+        .quiz-option.incorrect {
+            background-color: #ef4444 !important; /* bg-red-500 */
+            color: white !important;
+            border-color: #dc2626 !important;
+        }
+        .review-option.correct {
+            background-color: #dcfce7; /* bg-green-100 */
+            border-left: 4px solid #22c55e;
+        }
+        .review-option.incorrect {
+            background-color: #fee2e2; /* bg-red-100 */
+            border-left: 4px solid #ef4444;
+        }
+        [x-cloak] { display: none; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div x-data="quizApp()" x-init="init" class="max-w-4xl mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900" x-text="selectedQuizTitle"></h1>
+            <p class="text-lg text-gray-600 mt-2">模擬測驗</p>
+        </header>
+
+        <!-- 主選單 -->
+        <div x-show="!quizSelected" x-cloak class="bg-white p-8 rounded-2xl shadow-lg text-center">
+            <h2 class="text-2xl font-bold mb-4">請選擇測驗科目</h2>
+            <p class="text-gray-700 mb-8">請選擇您想要練習的科目，每個科目都有獨立的錯題本。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 科目一 -->
+                <div @click="selectQuiz('fundamentals')" class="p-6 bg-blue-50 border-2 border-blue-200 rounded-lg hover:shadow-lg hover:border-blue-400 transition cursor-pointer">
+                    <h3 class="text-xl font-bold text-blue-800">人工智慧基礎概論</h3>
+                    <p class="text-gray-600 mt-2">包含AI基礎概念、資料處理、機器學習與深度學習等40道題目。</p>
+                </div>
+                <!-- 科目二 -->
+                <div @click="selectQuiz('generative')" class="p-6 bg-orange-50 border-2 border-orange-200 rounded-lg hover:shadow-lg hover:border-orange-400 transition cursor-pointer">
+                    <h3 class="text-xl font-bold text-orange-800">生成式AI應用與規劃</h3>
+                    <p class="text-gray-600 mt-2">包含No Code/Low Code、AI應用、導入評估與風險管理等25道題目。</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 測驗選擇畫面 -->
+        <div x-show="quizSelected && !quizStarted" x-cloak class="bg-white p-8 rounded-2xl shadow-lg text-center relative">
+             <button @click="goHome()" class="absolute top-4 left-4 text-gray-500 hover:text-gray-800">
+                &larr; 返回主選單
+            </button>
+            <h2 class="text-2xl font-bold mb-4" x-text="selectedQuizTitle"></h2>
+            <p class="text-gray-700 mb-6">選擇一個模式開始您的學習之旅。</p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button @click="startQuiz('normal')" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors duration-300 shadow-md">
+                    開始完整測驗
+                </button>
+                <button @click="startQuiz('review')" :disabled="wronglyAnsweredQuestions.length === 0" class="bg-orange-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-orange-600 transition-colors duration-300 shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed">
+                    複習錯題 (<span x-text="wronglyAnsweredQuestions.length"></span>)
+                </button>
+            </div>
+        </div>
+
+
+        <!-- 測驗進行中 -->
+        <div x-show="quizStarted && !quizFinished" x-cloak class="bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+            <!-- 進度條和題號 -->
+            <div class="mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-gray-600" x-text="`問題 ${currentQuestionIndex + 1} / ${questions.length}`"></span>
+                     <span class="text-sm font-bold" :class="isReviewMode ? 'text-orange-600' : 'text-blue-600'" x-text="isReviewMode ? '錯題複習模式' : '完整測驗模式'"></span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div class="h-2.5 rounded-full" :class="isReviewMode ? 'bg-orange-500' : 'bg-blue-600'" :style="`width: ${((currentQuestionIndex + 1) / questions.length) * 100}%`"></div>
+                </div>
+            </div>
+
+            <!-- 問題 -->
+            <div class="mb-6" x-show="questions.length > 0">
+                <p class="text-lg md:text-xl font-semibold mb-2" x-text="questions[currentQuestionIndex].question"></p>
+                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-600 bg-blue-200" x-text="questions[currentQuestionIndex].category"></span>
+            </div>
+
+            <!-- 選項 -->
+            <div class="space-y-3" x-show="questions.length > 0">
+                <template x-for="(option, index) in questions[currentQuestionIndex].options" :key="index">
+                    <button @click="selectAnswer(index)"
+                            :disabled="currentAnswerStatus !== null"
+                            :class="{
+                                'correct': currentAnswerStatus !== null && questions[currentQuestionIndex].options.indexOf(questions[currentQuestionIndex].answer) === index,
+                                'incorrect': currentAnswerStatus === 'incorrect' && userAnswers[currentQuestionIndex] === index
+                            }"
+                            class="w-full text-left p-4 rounded-lg border-2 border-gray-200 hover:bg-gray-50 hover:border-blue-500 transition-all duration-200 quiz-option">
+                        <span class="font-medium" x-text="option"></span>
+                    </button>
+                </template>
+            </div>
+            
+            <!-- 即時解析 -->
+            <div x-show="currentAnswerStatus !== null" x-transition class="mt-4 p-4 rounded-lg" :class="currentAnswerStatus === 'correct' ? 'bg-green-100 border-l-4 border-green-500' : 'bg-red-100 border-l-4 border-red-500'">
+                 <p class="font-bold" x-text="currentAnswerStatus === 'correct' ? '答對了！' : '答錯了！'"></p>
+                 <p class="text-sm" x-text="questions[currentQuestionIndex].explanation"></p>
+            </div>
+
+
+            <!-- 導覽按鈕 -->
+            <div class="mt-8 flex justify-end items-center">
+                <button x-show="currentAnswerStatus !== null" @click="nextQuestion()"
+                        class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors">
+                    <span x-text="currentQuestionIndex < questions.length - 1 ? '下一題' : '完成測驗'"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 結果畫面 -->
+        <div x-show="quizFinished" x-cloak class="bg-white p-8 rounded-2xl shadow-lg">
+            <h2 class="text-2xl md:text-3xl font-bold text-center mb-4">測驗結束！</h2>
+            <p class="text-center text-xl mb-6" x-text="`您的總分是： ${score} / ${questions.length}`"></p>
+            
+            <div class="text-center mb-8 flex flex-col sm:flex-row justify-center items-center gap-4">
+                <button @click="goHome()" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors duration-300 shadow-md">
+                    返回主選單
+                </button>
+            </div>
+            
+            <!-- 答案回顧 -->
+            <h3 class="text-xl font-bold mb-4 border-t pt-6">本次測驗回顧</h3>
+            <div class="space-y-6">
+                <template x-for="(question, index) in questions" :key="index">
+                    <div class="border p-4 rounded-lg" :class="question.correctlyAnswered ? 'bg-green-50' : 'bg-red-50'">
+                        <p class="font-semibold mb-2" x-text="`${index + 1}. ${question.question}`"></p>
+                        <div class="space-y-2">
+                            <template x-for="(option, optionIndex) in question.options" :key="optionIndex">
+                                <div class="p-3 rounded-md text-sm review-option"
+                                     :class="{
+                                         'correct': option === question.answer,
+                                         'incorrect': !question.correctlyAnswered && userAnswers[index] === optionIndex
+                                     }">
+                                    <span x-text="option"></span>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="mt-3 p-3 bg-blue-100 border-l-4 border-blue-500 text-blue-800 rounded-r-lg">
+                            <p class="font-bold">解析：</p>
+                            <p x-text="question.explanation"></p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function quizApp() {
+            return {
+                // --- Global State ---
+                quizSelected: false,
+                selectedQuizTitle: 'AI應用規劃師模擬測驗',
+                selectedQuizKey: '',
+                
+                // --- Quiz State ---
+                quizStarted: false,
+                quizFinished: false,
+                isReviewMode: false,
+                currentQuestionIndex: 0,
+                score: 0,
+                currentAnswerStatus: null, // null, 'correct', 'incorrect'
+                userAnswers: [],
+                questions: [],
+                
+                // --- Question Banks ---
+                wronglyAnsweredQuestions: [], // Holds the wrong answers for the currently selected quiz
+                fundamentalsWrongAnswers: [],
+                generativeAiWrongAnswers: [],
+
+                fundamentalsQuestionBank: [
+                    { id: 1, question: "下列何者最能描述人工智慧（AI）的定義？", options: ["A) 一種只能執行單一重複性任務的程式", "B) 一種旨在模擬人類智慧，使機器能學習、推理與解決問題的技術", "C) 僅限於製造業使用的自動化機器人技術", "D) 一種用於儲存大量資料的資料庫系統"], answer: "B) 一種旨在模擬人類智慧，使機器能學習、推理與解決問題的技術", explanation: "人工智慧（AI）是一個廣泛的領域，旨在讓機器模擬人類的智慧行為，包括學習、推理、感知和解決問題等能力。", category: "人工智慧概念" },
+                    { id: 2, question: "根據功能不同，可以根據使用者輸入的提示詞（prompt）生成文字、語音、圖像和影片的AI屬於哪一種類型？", options: ["A) 分析型AI", "B) 預測型AI", "C) 生成型AI", "D) 專家型AI"], answer: "C) 生成型AI", explanation: "生成型AI（Generative AI）近年來快速發展，其主要功能是根據使用者輸入的提示詞來創造新的內容，如文字、圖片等。", category: "人工智慧概念" },
+                    { id: 3, question: "在人工智慧的應用領域中，利用AI分析醫學影像（如X光片、MRI）以輔助醫師進行精準診斷，是屬於哪個領域的應用？", options: ["A) 金融", "B) 製造業", "C) 交通", "D) 醫療保健"], answer: "D) 醫療保健", explanation: "將AI技術應用於分析醫學影像，以輔助疾病診斷，是AI在醫療保健領域中的一個重要且常見的應用實例。", category: "人工智慧概念" },
+                    { id: 4, question: "在人工智慧的架構中，提供必要的計算能力、數據支撐與核心演算法的部分被稱為什麼？", options: ["A) 開發應用層", "B) 實際運用層", "C) 技術底層", "D) 使用者介面層"], answer: "C) 技術底層", explanation: "技術底層是AI運作的基礎，包含了資料處理、演算法、機器學習、深度學習等核心要素，為上層應用提供支持。", category: "人工智慧概念" },
+                    { id: 5, question: "TensorFlow 和 PyTorch 是深度學習領域中常見的什麼？", options: ["A) 硬體晶片", "B) 作業系統", "C) 開發框架", "D) 程式語言"], answer: "C) 開發框架", explanation: "TensorFlow 和 PyTorch 是兩個主流的開源深度學習框架，提供了豐富的工具和函式庫，簡化了深度學習模型的開發過程。", category: "人工智慧概念" },
+                    { id: 6, question: "在資料結構類型中，XML、JSON、CSV 格式的資料通常被歸類為？", options: ["A) 結構化數據", "B) 半結構化數據", "C) 非結構化數據", "D) 序列化數據"], answer: "B) 半結構化數據", explanation: "半結構化數據具有一定的結構標籤（如XML的標籤、JSON的鍵值對），但格式相對靈活，不像關聯式資料庫那樣有嚴格的固定架構。", category: "資料處理與分析概念" },
+                    { id: 7, question: "在資料清洗過程中，處理數據中某些欄位沒有記錄有效數據的情況，稱為什麼？", options: ["A) 處理重複值", "B) 處理錯誤值", "C) 處理離群值", "D) 處理遺缺值"], answer: "D) 處理遺缺值", explanation: "遺缺值（Missing Value）是指數據集中某些欄位缺少數值的問題。處理方法包括填補（如使用平均值）或刪除該筆記錄。", category: "資料處理與分析概念" },
+                    { id: 8, question: "將數值數據縮放到特定範圍（如[0,1]），以消除不同變數之間的單位影響，這個過程稱為什麼？", options: ["A) 數據離散化", "B) 數據縮減", "C) 數據正規化/標準化", "D) 數據格式轉換"], answer: "C) 數據正規化/標準化", explanation: "數據正規化/標準化是為了消除特徵間的量綱差異，讓不同尺度的特徵在模型中有可比性，是數據預處理的重要步驟。", category: "資料處理與分析概念" },
+                    { id: 9, question: "哪一種數據分析方法旨在描述數據的基本特徵和分佈情況，例如計算平均值、中位數、標準差等？", options: ["A) 敘述性分析", "B) 探索性分析", "C) 診斷性分析", "D) 預測性分析"], answer: "A) 敘述性分析", explanation: "敘述性分析（Descriptive Analysis）是數據分析的基礎，主要使用統計指標和圖表來總結和呈現數據的現狀與基本特徵。", category: "資料處理與分析概念" },
+                    { id: 10, question: "在統計指標中，哪一個量數較不受極端值（離群值）的影響？", options: ["A) 平均值 (Mean)", "B) 中位數 (Median)", "C) 全距 (Range)", "D) 標準差 (Standard Deviation)"], answer: "B) 中位數 (Median)", explanation: "中位數是將數據排序後位於中間位置的值，因此它不像平均值那樣會被極端的最大或最小值拉動，能更好地反映數據的中心趨勢。", category: "資料處理與分析概念" },
+                    { id: 11, question: "主成分分析（Principal Component Analysis, PCA）是一種常用於什麼目的的技術？", options: ["A) 數據分類", "B) 數據聚類", "C) 數據降維", "D) 數據預測"], answer: "C) 數據降維", explanation: "PCA 是一種常見的數據縮減（降維）技術，它透過線性變換將高維數據轉換為低維特徵，同時保留大部分原始數據的訊息。", category: "資料處理與分析概念" },
+                    { id: 12, question: "下列哪一種搜尋演算法在搜尋前需要資料集預先排序？", options: ["A) 線性搜尋 (Linear Search)", "B) 二分搜尋 (Binary Search)", "C) 深度優先搜尋 (DFS)", "D) 廣度優先搜尋 (BFS)"], answer: "B) 二分搜尋 (Binary Search)", explanation: "二分搜尋的運作原理是反覆將搜尋範圍切成兩半，這要求資料集必須是已排序的，才能正確地判斷目標值在哪一半區域。", category: "資料處理與分析概念" },
+                    { id: 13, question: "在機器學習中，使用帶有標記（Labeled Data）的訓練數據來訓練模型，使其學習輸入與輸出之間關聯性的方法稱為什麼？", options: ["A) 監督式學習", "B) 非監督式學習", "C) 強化學習", "D) 半監督式學習"], answer: "A) 監督式學習", explanation: "監督式學習的核心特徵就是使用有標記的數據進行訓練，模型在「監督」下學習如何從輸入預測正確的輸出標籤。", category: "機器學習概念" },
+                    { id: 14, question: "垃圾郵件過濾、影像識別（辨識圖片中的物件類別）等任務，在監督式學習中屬於哪一種類型的問題？", options: ["A) 迴歸 (Regression)", "B) 分類 (Classification)", "C) 聚類 (Clustering)", "D) 降維 (Dimensionality Reduction)"], answer: "B) 分類 (Classification)", explanation: "分類任務的目標是將輸入數據分配到預先定義好的類別中，例如「垃圾郵件」或「非垃圾郵件」，或者圖片中的「貓」、「狗」等。", category: "機器學習概念" },
+                    { id: 15, question: "哪一種學習方法是讓代理（Agent）透過與環境互動，並根據回饋（獎勵或懲罰）來學習最佳行動策略？", options: ["A) 監督式學習", "B) 非監督式學習", "C) 強化學習", "D) 遷移學習"], answer: "C) 強化學習", explanation: "強化學習（Reinforcement Learning）的核心是「試錯學習」，代理在環境中行動，並從結果中學習如何做出能獲得最大累積獎勵的決策。", category: "機器學習概念" },
+                    { id: 16, question: "在深度學習中，哪一種神經網路模型特別擅長處理圖像數據，並能高效地提取如邊緣、紋理等局部特徵？", options: ["A) 循環神經網路 (RNN)", "B) 卷積神經網路 (CNN)", "C) 生成對抗網路 (GAN)", "D) 全連接神經網路 (FCN)"], answer: "B) 卷積神經網路 (CNN)", explanation: "卷積神經網路（CNN）的設計靈感來自生物視覺皮層，其卷積層和池化層的結構特別適合捕捉圖像中的空間層次特徵。", category: "機器學習概念" },
+                    { id: 17, question: "長短期記憶網路（LSTM）和門控循環單元（GRU）是為了解決哪種神經網路的梯度消失問題而提出的改進版本？", options: ["A) 卷積神經網路 (CNN)", "B) 循環神經網路 (RNN)", "C) 貝氏網路", "D) 專家系統"], answer: "B) 循環神經網路 (RNN)", explanation: "傳統的RNN在處理長序列時容易出現梯度消失或爆炸問題，導致無法學習到長期依賴關係。LSTM和GRU透過引入門控機制來有效解決這個問題。", category: "機器學習概念" },
+                    { id: 18, question: "K-最近鄰演算法（KNN）是一種基於什麼原理的學習演算法？", options: ["A) 建立一個數學方程式來擬合數據", "B) 建立一個決策邊界來劃分數據", "C) 找出與新樣本最接近的K個訓練樣本來進行預測", "D) 透過獎勵與懲罰機制來學習"], answer: "C) 找出與新樣本最接近的K個訓練樣本來進行預測", explanation: "KNN是一種基於實例的學習，它不做模型的訓練，而是直接在預測時計算新樣本與所有訓練樣本的距離，並根據最近的K個鄰居來決定其類別或數值。", category: "機器學習概念" },
+                    { id: 19, question: "在模型訓練中，當模型在訓練數據上表現優異，但在未見過的測試數據上表現不佳時，這種現象稱為什麼？", options: ["A) 欠擬合 (Underfitting)", "B) 過擬合 (Overfitting)", "C) 交叉驗證 (Cross-validation)", "D) 梯度下降 (Gradient Descent)"], answer: "B) 過擬合 (Overfitting)", explanation: "過擬合是指模型過度學習了訓練數據中的雜訊和細節，導致其泛化能力下降，無法很好地適應新的數據。", category: "機器學習概念" },
+                    { id: 20, question: "在機器學習中，損失函數（Loss Function）的主要作用是什麼？", options: ["A) 增加模型的複雜度", "B) 衡量模型預測值與實際值之間的差異", "C) 選擇最重要的特徵", "D) 加快模型的訓練速度"], answer: "B) 衡量模型預測值與實際值之間的差異", explanation: "損失函數用來量化模型的預測誤差。模型訓練的目標就是透過調整參數來最小化損失函數的值，從而提升模型的準確性。", category: "機器學習概念" },
+                    { id: 21, question: "鑑別式 AI（Discriminative AI）與生成式 AI（Generative AI）最主要的區別是什麼？", options: ["A) 鑑別式AI需要更多計算資源", "B) 生成式AI只能處理文字資料", "C) 鑑別式AI專注於分類或預測，而生成式AI專注於創造新內容", "D) 兩者沒有本質上的區別"], answer: "C) 鑑別式AI專注於分類或預測，而生成式AI專注於創造新內容", explanation: "這是兩者最核心的差異。鑑別式AI學習數據的決策邊界以進行判斷（例如，這是貓還是狗？），而生成式AI學習數據的潛在分佈以生成新的、相似的數據（例如，畫一隻貓）。", category: "鑑別式AI與生成式AI概念" },
+                    { id: 22, question: "下列哪一個模型是典型的生成式 AI 模型？", options: ["A) 支援向量機 (SVM)", "B) 邏輯迴歸 (Logistic Regression)", "C) 決策樹 (Decision Tree)", "D) 生成對抗網路 (GAN)"], answer: "D) 生成對抗網路 (GAN)", explanation: "生成對抗網路（GAN）由一個生成器和一個判別器組成，透過相互對抗學習來生成高度逼真的新數據，是生成式AI的代表性模型。", category: "鑑別式AI與生成式AI概念" },
+                    { id: 23, question: "在生成對抗網路（GAN）中，判別器（Discriminator）的角色是什麼？", options: ["A) 接收隨機雜訊並生成模擬的數據樣本", "B) 負責區分輸入的數據是真實的還是由生成器生成的", "C) 調整生成器的學習率", "D) 將高維數據壓縮到低維空間"], answer: "B) 負責區分輸入的數據是真實的還是由生成器生成的", explanation: "判別器的目標就是成為一個精明的鑒定師，盡力分辨出生成器產生的「假」數據和真實數據，它的判斷結果會反過來驅動生成器去產生更逼真的數據。", category: "鑑別式AI與生成式AI概念" },
+                    { id: 24, question: "在醫療影像分析中，整合鑑別式AI和生成式AI有何優勢？", options: ["A) 只能降低模型訓練的時間", "B) 可以完全取代醫生的診斷", "C) 生成式AI可生成稀缺病理影像以增強數據，鑑別式AI則用於訓練更準確的診斷模型", "D) 只能用於生成報告，無法輔助診斷"], answer: "C) 生成式AI可生成稀缺病理影像以增強數據，鑑別式AI則用於訓練更準確的診斷模型", explanation: "這是一個典型的整合應用。由於某些疾病的醫學影像數據非常稀少，可以使用生成式AI來創建合成數據（數據增強），然後用這些增強後的數據集來訓練鑑別式AI模型，從从而提高其診斷的準確性和泛化能力。", category: "鑑別式AI與生成式AI概念" },
+                    { id: 25, question: "下列哪一項是鑑別式AI的典型應用？", options: ["A) 根據文字描述生成一幅畫", "B) 創作一首新的樂曲", "C) 信用風險評估（判斷用戶是否會違約）", "D) 將一張照片轉換成梵谷風格的油畫"], answer: "C) 信用風險評估（判斷用戶是否會違約）", explanation: "信用風險評估是一個典型的分類問題，需要模型根據用戶的資料判斷其屬於「會違約」或「不會違約」的類別，這是鑑別式AI的專長。", category: "鑑別式AI與生成式AI概念" },
+                    { id: 26, question: "變分自編碼器（Variational Autoencoders, VAE）是一種生成模型，它主要由哪兩部分組成？", options: ["A) 生成器與判別器", "B) 卷積層與池化層", "C) 編碼器與解碼器", "D) 策略網路與價值網路"], answer: "C) 編碼器與解碼器", explanation: "VAE透過一個編碼器將輸入數據壓縮到一個低維的潛在空間，再由一個解碼器從這個潛在空間中重建出數據。這個過程讓模型學會了數據的潛在結構，從而能夠生成新的數據。", category: "鑑別式AI與生成式AI概念" },
+                    { id: 27, question: "提示工程（Prompt Engineering）主要與哪一種類型的AI密切相關？", options: ["A) 鑑別式AI", "B) 生成式AI", "C) 專家系統", "D) 傳統機器學習"], answer: "B) 生成式AI", explanation: "提示工程是指設計和優化輸入提示（Prompt），以引導大型生成式AI模型（如ChatGPT）產生期望的輸出。這是與生成式AI互動的核心技巧。", category: "鑑別式AI與生成式AI概念" },
+                    { id: 28, question: "擴散模型（Diffusion Models）生成數據的基本原理是什麼？", options: ["A) 透過兩個網路相互對抗學習", "B) 透過逐步從隨機雜訊中去除雜訊來重建數據", "C) 透過建立一個機率圖模型來生成數據", "D) 透過尋找數據中的決策邊界來生成數據"], answer: "B) 透過逐步從隨機雜訊中去除雜訊來重建數據", explanation: "擴散模型首先在訓練階段向真實數據中逐步添加雜訊，然後學習一個反向過程，能夠從純粹的隨機雜訊開始，一步步地將雜訊去除，最終生成一個清晰、高品質的數據樣本。", category: "鑑別式AI與生成式AI概念" },
+                    { id: 29, question: "下列關於隨機森林（Random Forest）的敘述何者正確？", options: ["A) 它是一種生成式模型", "B) 它是一種非監督式學習演算法", "C) 它透過集成多棵決策樹來提高預測準確性與穩定性", "D) 它主要用於數據降維"], answer: "C) 它透過集成多棵決策樹來提高預測準確性與穩定性", explanation: "隨機森林是一種集成學習方法，它構建多個決策樹，並將它們的預測結果進行投票或平均，從而獲得比單一決策樹更好、更穩健的性能，屬於鑑別式AI的範疇。", category: "鑑別式AI與生成式AI概念" },
+                    { id: 30, question: "在診斷性分析中，「向下分析（Drill-down Analysis）」的主要目的是什麼？", options: ["A) 找出項目之間的共現關係", "B) 分析變量之間的因果關係", "C) 從宏觀數據逐層深入到細節層級以鎖定問題", "D) 預測未來的事件或趨勢"], answer: "C) 從宏觀數據逐層深入到細節層級以鎖定問題", explanation: "向下分析（Drill-down）是診斷性分析的一種方法，用於從總體數據開始，逐步深入到更詳細的分類（如地區、產品、時間），以找出問題的根本原因。", category: "資料處理與分析概念" },
+                    { id: 31, question: "在機器學習中，F1分數（F1 Score）這個評估指標代表什麼？", options: ["A) 模型預測的準確率", "B) 精確率（Precision）和召回率（Recall）的調和平均數，是一個綜合性指標", "C) 模型處理高維度數據的能力", "D) 模型訓練的速度"], answer: "B) 精確率（Precision）和召回率（Recall）的調和平均數，是一個綜合性指標", explanation: "F1分數同時考慮了精確率和召回率，特別適用於數據不平衡的分類問題，能提供比單純的準確率更全面的評估。", category: "機器學習概念" },
+                    { id: 32, question: "生成對抗網路（GAN）在訓練過程中可能遇到的「模式崩潰（Mode Collapse）」是指什麼情況？", options: ["A) 標記數據的成本過高", "B) 推論速度過慢", "C) 生成器只會產生種類非常有限的、單一的樣本", "D) 模型無法處理非線性數據"], answer: "C) 生成器只會產生種類非常有限的、單一的樣本", explanation: "模式崩潰是GAN訓練時的一個主要挑戰，指的是生成器找到了幾個能騙過判別器的樣本，並不斷重複生成它們，導致生成結果缺乏多樣性。", category: "鑑別式AI與生成式AI概念" },
+                    { id: 33, question: "下列何者是「AI治理（AI Governance）」的核心目標？", options: ["A) 最大化AI模型的計算能力", "B) 確保AI系統以透明、公平、可解釋和負責任的方式開發與使用", "C) 專注於提升AI預測的準確率，不考慮其他因素", "D) 將AI模型的決策過程完全保密以維持商業優勢"], answer: "B) 確保AI系統以透明、公平、可解釋和負責任的方式開發與使用", explanation: "AI治理旨在建立規範和框架，引導AI技術的健康發展，處理其可能帶來的倫理、社會和法律挑戰，確保其發展對人類有益。", category: "人工智慧概念" },
+                    { id: 34, question: "將連續型數據（如年齡）轉換為離散的區間或類別（如「青年」、「中年」、「老年」）的過程稱為什麼？", options: ["A) 數據正規化", "B) 數據縮減", "C) 數據離散化", "D) 數據聚合"], answer: "C) 數據離散化", explanation: "數據離散化是將連續變數轉換為分類變數的過程，這有助於簡化數據，並讓某些演算法（如決策樹）能更有效地處理。", category: "資料處理與分析概念" },
+                    { id: 35, question: "在機器學習模型訓練中，「提早停止（Early Stopping）」策略的主要用途是什麼？", options: ["A) 當模型在訓練集達到100%準確率時停止", "B) 當模型在驗證集上的表現開始下降時停止訓練，以防止過擬合", "C) 無論表現如何，都在固定的訓練次數後停止", "D) 加快訓練的初始階段"], answer: "B) 當模型在驗證集上的表現開始下降時停止訓練，以防止過擬合", explanation: "提早停止是一種正則化技巧，透過監控模型在獨立驗證集上的性能，在模型開始過擬合之前就停止訓練，以獲得更好的泛化能力。", category: "機器學習概念" },
+                    { id: 36, question: "下列哪個模型是典型的「鑑別式AI」模型？", options: ["A) 變分自編碼器 (VAE)", "B) 擴散模型 (Diffusion Models)", "C) 邏輯迴歸 (Logistic Regression)", "D) 生成對抗網路 (GAN)"], answer: "C) 邏輯迴歸 (Logistic Regression)", explanation: "邏輯迴歸直接學習輸入特徵與類別標籤之間的決策邊界，用於分類任務，是鑑別式模型的經典範例。其他選項皆為生成式模型。", category: "鑑別式AI與生成式AI概念" },
+                    { id: 37, question: "在金融領域中，人工智慧的一個常見應用為何？", options: ["A) 生成創意廣告文案", "B) 透過監控交易模式進行即時詐欺檢測", "C) 控制工廠中的機器手臂", "D) 優化城市的交通流量"], answer: "B) 透過監控交易模式進行即時詐欺檢測", explanation: "AI能夠快速分析大量交易數據，識別出與正常行為不符的異常模式，從而即時偵測並預警潛在的金融詐欺行為。", category: "人工智慧概念" },
+                    { id: 38, question: "哪一種數據蒐集方法涉及自動化地從網站上擷取公開資料？", options: ["A) 問卷與調查", "B) 向第三方數據商購買", "C) 使用內部產品數據", "D) 網路爬蟲 (Web Scraping)"], answer: "D) 網路爬蟲 (Web Scraping)", explanation: "網路爬蟲是一種程式，可以自動瀏覽網站並擷取其頁面上的公開資訊，是蒐集大量網路數據的常用方法。", category: "資料處理與分析概念" },
+                    { id: 39, question: "決策樹（Decision Tree）模型最主要的優勢是什麼？", options: ["A) 對於所有類型的數據都是最準確的模型", "B) 因為其決策規則易於理解，所以具有良好的可解釋性", "C) 它完全不會發生過擬合", "D) 它需要海量數據才能訓練"], answer: "B) 因為其決策規則易於理解，所以具有良好的可解釋性", explanation: "決策樹的樹狀結構類似於人類的決策流程圖，使其預測過程非常直觀且容易解釋，這在許多需要透明度的領域是一大優點。", category: "機器學習概念" },
+                    { id: 40, question: "設計有效的輸入（提示）來引導大型語言模型產生期望輸出的過程，稱之為什麼？", options: ["A) 特徵工程", "B) 超參數調整", "C) 提示工程", "D) 模型部署"], answer: "C) 提示工程", explanation: "提示工程（Prompt Engineering）是與大型生成式AI互動的一門藝術與科學，專注於如何建構提示以獲得更準確、更相關的輸出。", category: "鑑別式AI與生成式AI概念" }
+                ],
+                generativeAiQuestionBank: [
+                    { id: 101, question: "關於 No Code 與 Low Code 平台的敘述，下列何者最為正確？", options: ["A) No Code 平台適合專業開發者進行複雜的系統整合", "B) Low Code 平台完全不需要撰寫任何程式碼", "C) No Code 平台讓非技術背景者能透過視覺化介面開發應用", "D) 兩者功能完全相同，只是名稱不同"], answer: "C) No Code 平台讓非技術背景者能透過視覺化介面開發應用", explanation: "No Code 平台的核心價值在於透過拖放和視覺化設定，讓沒有程式設計背景的使用者也能建立應用程式，大幅降低技術門檻。", category: "No code/Low code 概念" },
+                    { id: 102, question: "生成式AI與 No Code/Low Code 平台結合，可以帶來什麼好處？", options: ["A) 只能用於自動生成行銷文案", "B) 會增加開發的複雜度與時間", "C) 可以自動生成程式碼、優化UI/UX設計，並提供數據分析建議", "D) 會完全取代人類設計師與開發者的工作"], answer: "C) 可以自動生成程式碼、優化UI/UX設計，並提供數據分析建議", explanation: "生成式AI能賦予 No Code/Low Code 平台更強大的能力，例如根據描述自動生成程式碼片段、提供介面設計建議、分析數據等，從而進一步提升開發效率。", category: "No code/Low code 概念" },
+                    { id: 103, question: "企業在選擇 No Code/Low Code 平台時，下列哪個不是重要的評估因素？", options: ["A) 平台的安全性與法規合規性", "B) 平台與現有系統的整合能力", "C) 平台開發商的股票價格", "D) 技術支援與社群資源的活躍度"], answer: "C) 平台開發商的股票價格", explanation: "評估平台應著重於其功能、安全性、擴展性、成本效益及技術支援，開發商的股價與平台本身的適用性沒有直接關聯。", category: "No code/Low code 概念" },
+                    { id: 104, question: "「市民開發者 (Citizen Developer)」通常是指哪一類人？", options: ["A) 專業的軟體工程師", "B) 利用 No Code/Low Code 工具解決業務問題的非技術背景員工", "C) 負責資訊安全的管理人員", "D) 大學資訊科系的學生"], answer: "B) 利用 No Code/Low Code 工具解決業務問題的非技術背景員工", explanation: "市民開發者是指那些身處業務第一線，利用被認可的開發工具（主要是No Code/Low Code平台）來創建自己所需應用的員工，他們通常不具備專業的程式開發背景。", category: "No code/Low code 概念" },
+                    { id: 105, question: "將生成式AI與 No Code/Low Code 平台結合時，可能面臨的主要挑戰不包含下列何者？", options: ["A) 模型生成內容的準確性與可靠性", "B) 訓練數據可能引發的資料隱私與安全問題", "C) 平台功能過於簡單，無法擴展", "D) AI模型可能帶有的偏見與倫理風險"], answer: "C) 平台功能過於簡單，無法擴展", explanation: "結合AI後的挑戰主要在於AI模型本身，如準確性、隱私、偏見等。而 No Code/Low Code 平台本身通常具備一定的擴展性，這不是結合後產生的主要挑戰。", category: "No code/Low code 概念" },
+                    { id: 106, question: "在生成式AI的技術架構中，「溫度參數 (Temperature Parameter)」主要用來控制什麼？", options: ["A) 模型訓練的速度", "B) 生成內容的隨機性與創造力", "C) 模型消耗的計算資源", "D) 生成內容的字數長度"], answer: "B) 生成內容的隨機性與創造力", explanation: "溫度參數用來調整模型輸出的機率分佈。較低的溫度會使模型傾向選擇機率最高的詞，生成結果較保守、一致；較高的溫度則會增加低機率詞被選中的機會，生成結果更具隨機性與創意。", category: "生成式AI應用領域與工具使用" },
+                    { id: 107, question: "下列何者是生成式AI在醫療保健領域的典型應用？", options: ["A) 自動化工廠的生產排程", "B) 預測股票市場的漲跌", "C) 分析生物醫學數據以加速藥物發現", "D) 設計建築物的藍圖"], answer: "C) 分析生物醫學數據以加速藥物發現", explanation: "生成式AI可以分析大量生物醫學文獻和分子結構數據，生成新的、有潛力的藥物分子結構，從而大幅縮短藥物研發的週期。", category: "生成式AI應用領域與工具使用" },
+                    { id: 108, question: "提示工程師 (Prompt Engineer) 的主要工作職責是什麼？", options: ["A) 維護伺服器硬體", "B) 設計和優化對大型語言模型的指令，以獲得更好的輸出結果", "C) 撰寫傳統的應用程式後端程式碼", "D) 進行市場銷售與客戶關係管理"], answer: "B) 設計和優化對大型語言模型的指令，以獲得更好的輸出結果", explanation: "隨著大型生成式AI的興起，如何有效地與AI溝通成為一項新興專業。提示工程師專門研究如何設計提示（Prompt），以引導AI產生最符合需求的內容。", category: "生成式AI應用領域與工具使用" },
+                    { id: 109, question: "在生成式AI工具中，RLHF (Reinforcement Learning from Human Feedback) 技術的主要目的是什麼？", options: ["A) 提高模型的計算速度", "B) 增加模型生成的內容長度", "C) 讓模型的生成結果更符合人類的偏好與期望", "D) 降低模型訓練所需的數據量"], answer: "C) 讓模型的生成結果更符合人類的偏好與期望", explanation: "人類回饋強化學習（RLHF）是透過收集人類對模型輸出結果的偏好排序，來微調模型，使其生成的內容更安全、更有用，且更符合人類的價值觀。", category: "生成式AI應用領域與工具使用" },
+                    { id: 110, question: "「AI幻覺 (AI hallucinations)」是指生成式AI的哪一種現象？", options: ["A) AI產生了極具創意的藝術作品", "B) AI生成了完全準確且基於事實的資訊", "C) AI自信地產生了看似合理但實際上是錯誤或虛構的資訊", "D) AI拒絕回答使用者的問題"], answer: "C) AI自信地產生了看似合理但實際上是錯誤或虛構的資訊", explanation: "AI幻覺是大型語言模型的一個已知問題，指的是模型可能會「編造」出一些不存在的事實、數據或引用，並且以非常確信的語氣呈現出來。", category: "生成式AI應用領域與工具使用" },
+                    { id: 111, question: "下列哪一個平台提供了大量的開源AI模型與資料集，極大地推動了AI社群的合作與發展？", options: ["A) Microsoft Office", "B) Adobe Photoshop", "C) Hugging Face", "D) Netflix"], answer: "C) Hugging Face", explanation: "Hugging Face是一個著名的AI社群與平台，提供了大量的預訓練模型、資料集和開發工具，成為開發者與研究人員共享與協作的重要資源庫。", category: "生成式AI應用領域與工具使用" },
+                    { id: 112, question: "生成式AI在教育領域的應用，不包括下列哪一項？", options: ["A) 為學生設計個人化的學習路徑", "B) 自動生成教學材料與練習題", "C) 完全取代教師的教學與引導角色", "D) 作為智慧教學助理，即時回答學生的問題"], answer: "C) 完全取代教師的教學與引導角色", explanation: "生成式AI在教育領域應被視為強大的輔助工具，它可以分擔重複性工作並提供個人化支持，但無法取代教師在情感交流、價值觀引導和複雜情境判斷中的關鍵角色。", category: "生成式AI應用領域與工具使用" },
+                    { id: 113, question: "在評估生成式AI模型的語言生成品質時，BLEU和ROUGE是常用的什麼？", options: ["A) 硬體效能指標", "B) 量化評估指標", "C) 模型訓練時間單位", "D) 使用者滿意度問卷"], answer: "B) 量化評估指標", explanation: "BLEU和ROUGE是兩種常用的自動評估指標，透過比較模型生成的文本與人類參考翻譯或摘要的重疊程度，來量化評估翻譯或摘要任務的品質。", category: "生成式AI應用領域與工具使用" },
+                    { id: 114, question: "企業在導入生成式AI之前，進行「痛點識別」的主要目的是什麼？", options: ["A) 了解競爭對手的AI技術", "B) 挖掘現有營運流程中的瓶頸與挑戰，以確定AI的應用目標", "C) 評估公司股票的市場價值", "D) 招聘更多的AI技術人才"], answer: "B) 挖掘現有營運流程中的瓶頸與挑戰，以確定AI的應用目標", explanation: "導入AI應以解決實際問題為導向。痛點識別幫助企業找出最需要改進的環節，從而確保AI的投入能夠帶來最大的業務價值。", category: "生成式AI導入評估規劃" },
+                    { id: 115, question: "在生成式AI導入的「準備階段」，企業應優先選擇哪一類專案開始？", options: ["A) 技術最複雜、最具挑戰性的專案", "B) 投資金額最高的專案", "C) 能夠影響所有部門的超大型專案", "D) 從簡單且可行的核心專案開始，進行小規模試點"], answer: "D) 從簡單且可行的核心專案開始，進行小規模試點", explanation: "採用分階段策略，從風險可控的小規模試點專案（POC）開始，有助於驗證技術可行性、累積經驗並建立內部信心，為後續的大規模推廣奠定基礎。", category: "生成式AI導入評估規劃" },
+                    { id: 116, question: "企業評估導入生成式AI的投資回報率（ROI）時，應考慮哪些效益？", options: ["A) 僅考慮節省的人力成本", "B) 僅考慮增加的軟體授權費用", "C) 應綜合評估直接效益（如營收增長）與間接效益（如流程效率提升）", "D) 僅考慮硬體設備的折舊"], answer: "C) 應綜合評估直接效益（如營收增長）與間接效益（如流程效率提升）", explanation: "一個全面的ROI分析需要考慮AI導入所帶來的多方面價值，包括可量化的財務回報（如營收、成本）和較難量化的營運效益（如效率、客戶滿意度）。", category: "生成式AI導入評估規劃" },
+                    { id: 117, question: "在生成式AI的風險管理中，「差分隱私（Differential Privacy）」技術主要用於應對哪一類風險？", options: ["A) 模型產生偏見的風險", "B) 訓練數據中的敏感資訊洩漏風險", "C) AI生成內容侵犯版權的風險", "D) 模型計算成本過高的風險"], answer: "B) 訓練數據中的敏感資訊洩漏風險", explanation: "差分隱私是一種在數據集中添加數學上可證明的噪音的技術，使得在進行數據分析時，無法輕易反推出單一個體的具體資訊，從而保護個人隱私。", category: "生成式AI導入評估規劃" },
+                    { id: 118, question: "當一個生成式AI模型在訓練時，其訓練數據反映了社會上對特定職業的性別刻板印象，這可能導致什麼風險？", options: ["A) 數據漂移 (Data Drift)", "B) 倫理偏見與歧視", "C) 反向工程攻擊", "D) 提示詞攻擊"], answer: "B) 倫理偏見與歧視", explanation: "如果訓練數據本身存在偏見，AI模型會學習並放大這些偏見，導致其生成的內容帶有歧視性，這是一個嚴重的倫理風險。", category: "生成式AI導入評估規劃" },
+                    { id: 119, question: "企業導入生成式AI後，為了確保模型長期有效，應建立「模型監控與重新訓練」機制，其主要目的不包括下列何者？", options: ["A) 追蹤模型表現，及早發現效能下降", "B) 檢查輸入數據的分佈變化（數據漂移）", "C) 在模型效能下降時，自動觸發重新訓練", "D) 永久使用最初訓練好的模型，不再更動"], answer: "D) 永久使用最初訓練好的模型，不再更動", explanation: "真實世界的數據是動態變化的，因此模型需要持續監控和更新（重新訓練），以適應新的數據分佈和業務需求，從而保持其準確性和有效性。", category: "生成式AI導入評估規劃" },
+                    { id: 120, question: "在風險管理的策略中，企業透過購買保險來應對AI可能造成的潛在損失，這屬於哪一種風險應對策略？", options: ["A) 風險規避", "B) 風險緩解", "C) 風險轉移", "D) 風險接受"], answer: "C) 風險轉移", explanation: "風險轉移是將風險的財務後果轉移給第三方（如保險公司）的策略，企業支付保費，以換取在風險事件發生時獲得賠償。", category: "生成式AI導入評估規劃" },
+                    { id: 121, question: "在生成式AI導入的「驗證POC」階段，A/B測試的主要用途是什麼？", options: ["A) 確保所有員工都完成了培訓", "B) 比較不同版本模型的效能，選擇表現更佳的版本", "C) 計算專案的總開發成本", "D) 檢查訓練數據是否存在偏見"], answer: "B) 比較不同版本模型的效能，選擇表現更佳的版本", explanation: "A/B測試是一種實驗方法，透過將使用者隨機分組，分別體驗不同版本的模型或功能，並根據數據指標（如點擊率、轉換率）來客觀地評估哪個版本表現更好。", category: "生成式AI導入評估規劃" },
+                    { id: 122, question: "下列何者是生成式AI在法律領域應用時，最主要的挑戰？", options: ["A) 生成的法律文件格式不美觀", "B) 確保生成內容的準確性、合規性及處理機密資訊的安全性", "C) AI無法理解複雜的法律術語", "D) 律師不願意使用新科技"], answer: "B) 確保生成內容的準確性、合規性及處理機密資訊的安全性", explanation: "法律領域對精確性和保密性有極高的要求。AI生成的內容必須絕對準確且符合現行法規，同時客戶的機密資訊也必須受到最高等級的保護，這是其應用時最大的挑戰。", category: "生成式AI導入評估規劃" },
+                    { id: 123, question: "企業導入AI時，為何需要評估「技術對接性」？", options: ["A) 為了確保新AI系統能與企業現有的IT基礎設施和軟體（如CRM、ERP）順利整合", "B) 為了了解最新的AI硬體趨勢", "C) 為了計算員工的平均技術水平", "D) 為了撰寫公司年度報告"], answer: "A) 為了確保新AI系統能與企業現有的IT基礎設施和軟體（如CRM、ERP）順利整合", explanation: "評估技術對接性是為了避免新舊系統之間出現數據孤島或流程中斷的問題，確保AI工具能夠無縫地融入現有工作流程，發揮最大效益。", category: "生成式AI導入評估規劃" },
+                    { id: 124, question: "在風險評估中，使用「風險矩陣 (Risk Matrix)」主要是為了什麼？", options: ["A) 創造新的AI模型", "B) 將風險的「發生概率」與「影響程度」進行交叉分析，以確定風險的優先級", "C) 將所有風險責任轉移給第三方", "D) 訓練員工如何應對所有風險"], answer: "B) 將風險的「發生概率」與「影響程度」進行交叉分析，以確定風險的優先級", explanation: "風險矩陣是一個視覺化工具，它幫助決策者直觀地比較不同風險的嚴重性，從而將有限的資源集中用於處理最高優先級的風險。", category: "生成式AI導入評估規劃" },
+                    { id: 125, question: "「可解釋性AI (Explainable AI, XAI)」技術的發展，主要是為了解決生成式AI的哪個問題？", options: ["A) 計算速度太慢", "B) 模型決策過程像「黑箱」一樣不透明，難以理解與信任", "C) 訓練數據不足", "D) 生成的圖像解析度不夠高"], answer: "B) 模型決策過程像「黑箱」一樣不透明，難以理解與信任", explanation: "許多複雜的AI模型（特別是深度學習模型）的內部決策邏輯非常複雜，難以解釋。XAI的目標就是開發技術來解釋AI是如何做出特定決策的，以增加模型的透明度、可信度和可靠性。", category: "生成式AI導入評估規劃" }
+                ],
+
+
+                init() {
+                    const fundamentals = localStorage.getItem('fundamentals_wrong_answers');
+                    this.fundamentalsWrongAnswers = fundamentals ? JSON.parse(fundamentals) : [];
+                    
+                    const generative = localStorage.getItem('gen_ai_wronglyAnsweredQuestions');
+                    this.generativeAiWrongAnswers = generative ? JSON.parse(generative) : [];
+                },
+
+                selectQuiz(quizType) {
+                    this.selectedQuizKey = quizType;
+                    if (quizType === 'fundamentals') {
+                        this.selectedQuizTitle = '人工智慧基礎概論';
+                        this.wronglyAnsweredQuestions = this.fundamentalsWrongAnswers;
+                    } else if (quizType === 'generative') {
+                        this.selectedQuizTitle = '生成式AI應用與規劃';
+                        this.wronglyAnsweredQuestions = this.generativeAiWrongAnswers;
+                    }
+                    this.quizSelected = true;
+                },
+
+                goHome() {
+                    this.quizSelected = false;
+                    this.quizStarted = false;
+                    this.quizFinished = false;
+                    this.selectedQuizTitle = 'AI應用規劃師模擬測驗';
+                    this.selectedQuizKey = '';
+                },
+
+                saveWrongAnswers() {
+                    if (this.selectedQuizKey === 'fundamentals') {
+                        localStorage.setItem('fundamentals_wrong_answers', JSON.stringify(this.fundamentalsWrongAnswers));
+                    } else if (this.selectedQuizKey === 'generative') {
+                        localStorage.setItem('gen_ai_wronglyAnsweredQuestions', JSON.stringify(this.generativeAiWrongAnswers));
+                    }
+                },
+
+                shuffleArray(array) {
+                    let newArr = [...array];
+                    for (let i = newArr.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+                    }
+                    return newArr;
+                },
+
+                startQuiz(mode) {
+                    this.isReviewMode = mode === 'review';
+                    let questionBank = [];
+
+                    if (this.isReviewMode) {
+                        questionBank = this.wronglyAnsweredQuestions;
+                    } else {
+                        if (this.selectedQuizKey === 'fundamentals') {
+                            questionBank = this.fundamentalsQuestionBank;
+                        } else {
+                            questionBank = this.generativeAiQuestionBank;
+                        }
+                    }
+                    
+                    this.questions = this.shuffleArray(questionBank);
+                    this.userAnswers = Array(this.questions.length).fill(null);
+                    this.questions.forEach(q => q.correctlyAnswered = null);
+                    this.currentQuestionIndex = 0;
+                    this.score = 0;
+                    this.currentAnswerStatus = null;
+                    this.quizFinished = false;
+                    this.quizStarted = true;
+                },
+
+                selectAnswer(selectedIndex) {
+                    if (this.currentAnswerStatus !== null) return;
+
+                    const currentQuestion = this.questions[this.currentQuestionIndex];
+                    const correctIndex = currentQuestion.options.indexOf(currentQuestion.answer);
+                    
+                    this.userAnswers[this.currentQuestionIndex] = selectedIndex;
+
+                    if (selectedIndex === correctIndex) {
+                        this.currentAnswerStatus = 'correct';
+                        currentQuestion.correctlyAnswered = true;
+                        this.score++;
+                        if (this.isReviewMode) {
+                           if (this.selectedQuizKey === 'fundamentals') {
+                                this.fundamentalsWrongAnswers = this.fundamentalsWrongAnswers.filter(q => q.id !== currentQuestion.id);
+                           } else {
+                                this.generativeAiWrongAnswers = this.generativeAiWrongAnswers.filter(q => q.id !== currentQuestion.id);
+                           }
+                           this.saveWrongAnswers();
+                           this.wronglyAnsweredQuestions = this.wronglyAnsweredQuestions.filter(q => q.id !== currentQuestion.id);
+                        }
+                    } else {
+                        this.currentAnswerStatus = 'incorrect';
+                        currentQuestion.correctlyAnswered = false;
+                        if (!this.isReviewMode) {
+                            let targetWrongList = this.selectedQuizKey === 'fundamentals' ? this.fundamentalsWrongAnswers : this.generativeAiWrongAnswers;
+                            const isAlreadyWrong = targetWrongList.some(q => q.id === currentQuestion.id);
+                            if (!isAlreadyWrong) {
+                                targetWrongList.push(currentQuestion);
+                                this.saveWrongAnswers();
+                            }
+                        }
+                    }
+                },
+
+                nextQuestion() {
+                    if (this.currentQuestionIndex < this.questions.length - 1) {
+                        this.currentQuestionIndex++;
+                        this.currentAnswerStatus = null;
+                    } else {
+                        this.finishQuiz();
+                    }
+                },
+
+                finishQuiz() {
+                    this.quizFinished = true;
+                },
+
+                restartQuiz() {
+                    // This function now effectively takes user back to the quiz selection screen
+                    this.quizStarted = false;
+                    this.quizFinished = false;
+                    // Reload the wrong answers count for the selected quiz
+                    if (this.selectedQuizKey === 'fundamentals') {
+                        this.wronglyAnsweredQuestions = this.fundamentalsWrongAnswers;
+                    } else if (this.selectedQuizKey === 'generative') {
+                        this.wronglyAnsweredQuestions = this.generativeAiWrongAnswers;
+                    }
+                }
+            }
+        }
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('quizApp', quizApp);
+        });
+    </script>
+</body>
+</html>

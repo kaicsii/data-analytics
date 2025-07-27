@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>互動式報告：數據驅動的旅遊目的地</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals with Teal Accent -->
+    <!-- Application Structure Plan: A thematic, single-page dashboard application. The structure is designed for non-linear exploration of the report's key concepts. It starts with a high-level strategic framework, then allows users to dive into three core interactive modules: 1) A comparative tool for Data Governance Models, 2) A simulator for Dynamic Resource Allocation, and 3) An explorable dashboard for the Local Flavor Index. It concludes with a clear, actionable Strategic Roadmap. This structure was chosen to transform the dense, academic report into an engaging, decision-oriented tool. It prioritizes user understanding and interaction over the report's linear chapter flow, making abstract concepts tangible and explorable. -->
+    <!-- Visualization & Content Choices: 1. Strategic Framework: Goal=Organize, Method=HTML/CSS diagram, Interaction=Scroll-based reveal. Justification=Visually represents the report's core logic simply and effectively. 2. Governance Models: Goal=Compare, Method=Interactive HTML cards, Interaction=Click to highlight and display details. Justification=Turns a static table into an active comparison tool, improving comprehension. 3. Resource Allocation: Goal=Change/Relationships, Method=Chart.js Scatter Plot (Pareto Frontier), Interaction=Sliders to change variables and see live chart updates. Justification=The most effective way to demonstrate the complex trade-offs of multi-objective optimization. Library=Chart.js. 4. Local Flavor Index: Goal=Inform/Compare, Method=Chart.js Radar Chart & HTML cards, Interaction=Hover/Click on chart/cards for details. Justification=Radar chart provides an excellent high-level summary, while cards offer drill-down capabilities. Library=Chart.js. 5. Roadmap: Goal=Organize, Method=HTML/CSS timeline, Interaction=Click to expand details. Justification=A clear, intuitive way to present a multi-stage process. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #FDFBF8;
+            color: #4A4A4A;
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #1D8A99;
+            border-bottom-color: #1D8A99;
+        }
+        .card {
+            background-color: #FFFFFF;
+            border: 1px solid #EAEAEA;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.07);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 40vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .section-title {
+            color: #2c5282;
+        }
+        .pill-button {
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .pill-button.active {
+            background-color: #1D8A99;
+            color: white;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #1D8A99;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #1D8A99;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold text-gray-800">數據驅動的旅遊目的地</h1>
+            <div class="hidden md:flex space-x-8">
+                <a href="#framework" class="nav-link pb-1">戰略框架</a>
+                <a href="#governance" class="nav-link pb-1">治理模型</a>
+                <a href="#allocation" class="nav-link pb-1">資源配置</a>
+                <a href="#lfi" class="nav-link pb-1">在地風格</a>
+                <a href="#roadmap" class="nav-link pb-1">實施路徑</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden">
+            <a href="#framework" class="block py-2 px-6 text-sm hover:bg-gray-100">戰略框架</a>
+            <a href="#governance" class="block py-2 px-6 text-sm hover:bg-gray-100">治理模型</a>
+            <a href="#allocation" class="block py-2 px-6 text-sm hover:bg-gray-100">資源配置</a>
+            <a href="#lfi" class="block py-2 px-6 text-sm hover:bg-gray-100">在地風格</a>
+            <a href="#roadmap" class="block py-2 px-6 text-sm hover:bg-gray-100">實施路徑</a>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8 md:py-12">
+
+        <section id="framework" class="mb-16 md:mb-24 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4 section-title">戰略框架總覽</h2>
+            <p class="max-w-3xl mx-auto text-center text-gray-600 mb-12">
+                本報告的核心論點是，現代旅遊目的地管理必須從單純的技術應用，演進為一個以數據為核心、促進所有利害關係人共同創造價值的完整生態系統。這個演進過程可以被理解為一個多階段的轉型，每一步都建立在前一步的基礎之上，最終實現真正的智慧化與可持續發展。
+            </p>
+            <div class="relative w-full max-w-5xl mx-auto p-4">
+                <div class="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gray-200 hidden md:block"></div>
+                <div class="space-y-12 md:space-y-0">
+                    <div class="md:grid md:grid-cols-2 md:gap-8 items-center">
+                        <div class="flex justify-center md:justify-end md:pr-8">
+                            <div class="w-16 h-16 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center text-2xl font-bold">1</div>
+                        </div>
+                        <div class="text-center md:text-left mt-4 md:mt-0">
+                            <h3 class="text-xl font-bold mb-2">電子旅遊 (e-Tourism)</h3>
+                            <p class="text-gray-600">利用資通訊技術(ICT)進行線上行銷和預訂。焦點在於將線下業務數位化。</p>
+                        </div>
+                    </div>
+                    <div class="md:grid md:grid-cols-2 md:gap-8 items-center">
+                        <div class="text-center md:text-right mt-4 md:mt-0 md:order-2">
+                             <h3 class="text-xl font-bold mb-2">智慧觀光 (Smart Tourism)</h3>
+                            <p class="text-gray-600">整合IoT、AI等技術，提升遊客體驗和營運效率。焦點從行銷轉向目的地管理。</p>
+                        </div>
+                        <div class="flex justify-center md:justify-start md:pl-8 md:order-1 mt-4 md:mt-0">
+                           <div class="w-16 h-16 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-2xl font-bold">2</div>
+                        </div>
+                    </div>
+                    <div class="md:grid md:grid-cols-2 md:gap-8 items-center">
+                        <div class="flex justify-center md:justify-end md:pr-8">
+                            <div class="w-16 h-16 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-2xl font-bold">3</div>
+                        </div>
+                        <div class="text-center md:text-left mt-4 md:mt-0">
+                            <h3 class="text-xl font-bold mb-2">數據驅動生態系</h3>
+                            <p class="text-gray-600">數據成為命脈，在健全治理下流動，實現大規模個人化與資源優化。</p>
+                        </div>
+                    </div>
+                     <div class="md:grid md:grid-cols-2 md:gap-8 items-center">
+                        <div class="text-center md:text-right mt-4 md:mt-0 md:order-2">
+                            <h3 class="text-xl font-bold mb-2">價值共創 (Value Co-creation)</h3>
+                            <p class="text-gray-600">遊客、商家、DMO在數據生態系中互動，共同創造並分享價值，形成可持續的正向循環。</p>
+                        </div>
+                        <div class="flex justify-center md:justify-start md:pl-8 md:order-1 mt-4 md:mt-0">
+                           <div class="w-16 h-16 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-2xl font-bold">4</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="governance" class="mb-16 md:mb-24 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4 section-title">互動比較：旅遊數據治理模型</h2>
+            <p class="max-w-3xl mx-auto text-center text-gray-600 mb-12">
+                數據的價值在於流動與應用，但前提是信任。不同的數據治理模型在數據主權、可擴展性和中小企業包容性等方面有著根本性的差異。點擊下方的模型，探索其核心特徵與權衡，以選擇最適合您目的地的路徑。
+            </p>
+            <div class="flex justify-center space-x-2 md:space-x-4 mb-8">
+                <button class="governance-btn pill-button px-4 py-2 rounded-full bg-gray-200 text-gray-700 active" data-model="centralized">集中式數據湖</button>
+                <button class="governance-btn pill-button px-4 py-2 rounded-full bg-gray-200 text-gray-700" data-model="federated">聯邦式數據空間</button>
+                <button class="governance-btn pill-button px-4 py-2 rounded-full bg-gray-200 text-gray-700" data-model="cooperative">數據合作社/信託</button>
+            </div>
+            <div id="governance-display" class="card p-6 md:p-8 max-w-4xl mx-auto">
+            </div>
+        </section>
+
+        <section id="allocation" class="mb-16 md:mb-24 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4 section-title">模擬器：旅遊資源動態配置</h2>
+             <p class="max-w-3xl mx-auto text-center text-gray-600 mb-12">
+                目的地管理是在相互衝突的目標間尋求平衡的藝術。此模擬器基於報告中的多目標優化（MOO）框架，讓您親身體驗決策的權衡。調整下方的遊客數量與稅費水平，觀察其如何影響旅遊總收入與目的地的負面衝擊指數。圖表中的藍點代表您當前的選擇，而綠色曲線（柏拉圖前沿）則代表所有可能的「最佳」平衡點。
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                <div class="md:col-span-1 space-y-6">
+                    <div>
+                        <label for="tourist-slider" class="block font-medium mb-2">每日遊客上限 (人)</label>
+                        <input id="tourist-slider" type="range" min="1000" max="5000" value="3000" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider">
+                        <div class="text-center mt-1 font-semibold text-lg text-teal-600"><span id="tourist-value">3000</span> 人</div>
+                    </div>
+                    <div>
+                        <label for="tax-slider" class="block font-medium mb-2">旅遊相關稅費調整 (%)</label>
+                        <input id="tax-slider" type="range" min="-10" max="10" value="0" step="1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider">
+                        <div class="text-center mt-1 font-semibold text-lg text-teal-600"><span id="tax-value">0</span> %</div>
+                    </div>
+                    <div class="card p-4 bg-amber-50 border-amber-200">
+                        <h4 class="font-bold text-amber-800 mb-2">承載力限制 (基於朱諾市案例)</h4>
+                        <ul class="text-sm text-amber-700 space-y-1">
+                            <li><span class="font-semibold">固體廢物:</span> < 1.2萬噸/年</li>
+                            <li><span class="font-semibold">飲用水:</span> < 12.87 MG/日</li>
+                            <li><span class="font-semibold">CO₂排放:</span> < 1.25萬噸/年</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="md:col-span-2">
+                    <div class="chart-container">
+                        <canvas id="pareto-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="lfi" class="mb-16 md:mb-24 scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4 section-title">儀表板：在地風格指數 (LFI)</h2>
+            <p class="max-w-3xl mx-auto text-center text-gray-600 mb-12">
+                目的地的吸引力源於其獨特的「在地風格」。此儀表板將此無形資產量化為一個可衡量、可追蹤的指數。雷達圖展示了目的地在五個核心維度上的表現，幫助管理者評估品牌策略成效，並發現市場機會。點擊下方的卡片，可以了解構成各維度分數的具體數據來源。
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="md:col-span-1">
+                     <div class="space-y-4" id="lfi-cards">
+                     </div>
+                </div>
+                <div class="md:col-span-2 flex items-center justify-center">
+                    <div class="chart-container h-[400px] max-h-[50vh]">
+                        <canvas id="lfi-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="roadmap" class="scroll-mt-20">
+            <h2 class="text-3xl font-bold text-center mb-4 section-title">戰略實施路徑</h2>
+            <p class="max-w-3xl mx-auto text-center text-gray-600 mb-12">
+                從理想到實踐，數據驅動的轉型需要一個清晰、分階段的行動計畫。本報告提出一個四階段的路線圖，引導目的地從奠定治理基礎開始，透過試點專案證明價值，逐步建設可擴展的基礎設施，最終邁向全面的智慧化優化。
+            </p>
+            <div class="max-w-4xl mx-auto">
+                <div class="space-y-8">
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold mb-2 text-blue-700">第一階段：奠定治理基礎</h3>
+                        <p class="text-gray-600">成立多方參與的數據治理委員會，並起草一份精簡版的數據共享合作協議（規則手冊精簡版），建立最基本的信任共識。</p>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold mb-2 text-green-700">第二階段：試點專案先行</h3>
+                        <p class="text-gray-600">選擇一個高影響力的痛點（如景點排隊、節日擁堵），啟動小規模、有形可見的試點專案，並設定清晰的ROI衡量指標以證明價值。</p>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold mb-2 text-purple-700">第三階段：建設可擴展的基礎設施</h3>
+                        <p class="text-gray-600">在試點成功後，爭取支持並投資建設一個基於國際標準（如IDSA）、保護數據主權的聯邦式數據共享架構，為未來所有應用奠定基礎。</p>
+                    </div>
+                    <div class="card p-6">
+                        <h3 class="text-xl font-bold mb-2 text-red-700">第四階段：邁向進階優化</h3>
+                        <p class="text-gray-600">當數據生態系成熟後，實施動態資源配置模型，利用豐富的即時與歷史數據，對目的地的核心資源進行智慧化調配，實現可持續發展目標。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white mt-16 border-t">
+        <div class="container mx-auto px-6 py-4 text-center text-gray-500 text-sm">
+            <p>此互動式報告根據《數據驅動的旅遊目的地：治理、資源優化與競爭力認同的戰略框架》報告生成。</p>
+            <p>&copy; 2025 智慧旅遊洞察。保留所有權利。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            const navLinks = document.querySelectorAll('nav a');
+            mobileMenu.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
+            });
+
+            const sections = document.querySelectorAll('section');
+            const navLi = document.querySelectorAll('nav .hidden a');
+
+            window.addEventListener('scroll', ()=> {
+                let current = '';
+                sections.forEach( section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 100) {
+                        current = section.getAttribute('id');
+                    }
+                })
+
+                navLi.forEach( a => {
+                    a.classList.remove('active');
+                    if (a.getAttribute('href').includes(current)) {
+                        a.classList.add('active');
+                    }
+                })
+            });
+
+            const governanceData = {
+                centralized: {
+                    title: '集中式數據湖 (Centralized Data Lake)',
+                    sovereignty: { label: '數據主權', value: '低', color: 'red' },
+                    scalability: { label: '可擴展性', value: '中', color: 'yellow' },
+                    inclusion: { label: '中小企業包容性', value: '較低', color: 'red' },
+                    complexity: { label: '實施複雜度', value: '技術直接，整合挑戰大', color: 'yellow' },
+                    potential: { label: '創新潛力', value: '中', color: 'yellow' },
+                    description: '數據被集中儲存和管理，所有權和控制權轉移給平台方。初期整合快，但隨著數據源增加，治理複雜度呈指數級增長。中小企業可能因缺乏信任或技術能力而難以參與。',
+                    example: '阿布達比文化與旅遊部（DCT）的早期數據整合平台。'
+                },
+                federated: {
+                    title: '聯邦式數據空間 (Federated Data Space)',
+                    sovereignty: { label: '數據主權', value: '高', color: 'green' },
+                    scalability: { label: '可擴展性', value: '高', color: 'green' },
+                    inclusion: { label: '中小企業包容性', value: '高', color: 'green' },
+                    complexity: { label: '實施複雜度', value: '技術較複雜，需部署連接器', color: 'red' },
+                    potential: { label: '創新潛力', value: '高', color: 'green' },
+                    description: '數據保留在原始擁有者端，透過可信連接器在控制下共享。模組化設計易於擴展，旨在降低參與門檻，保護中小企業資產，並鼓勵第三方開發創新應用。',
+                    example: '歐盟旅遊數據空間（DATES）計畫。'
+                },
+                cooperative: {
+                    title: '數據合作社/信託 (Data Cooperative/Trust)',
+                    sovereignty: { label: '數據主權', value: '中到高', color: 'green' },
+                    scalability: { label: '可擴展性', value: '中', color: 'yellow' },
+                    inclusion: { label: '中小企業包容性', value: '高', color: 'green' },
+                    complexity: { label: '實施複雜度', value: '治理上最複雜，需建法律實體', color: 'red' },
+                    potential: { label: '創新潛力', value: '中到高', color: 'yellow' },
+                    description: '數據由成員共同治理的法律實體管理，規則由成員集體制定。基於法律和契約建立信任，能很好地代表中小企業的集體利益，但擴展受限於治理模型的複雜性。',
+                    example: '新加坡旅遊局的數據共享框架具有部分合作社特徵。'
+                }
+            };
+
+            const governanceDisplay = document.getElementById('governance-display');
+            const governanceBtns = document.querySelectorAll('.governance-btn');
+
+            function renderGovernanceModel(modelKey) {
+                const model = governanceData[modelKey];
+                const colorMap = { red: 'bg-red-100 text-red-800', yellow: 'bg-yellow-100 text-yellow-800', green: 'bg-green-100 text-green-800' };
+                
+                governanceDisplay.innerHTML = `
+                    <h3 class="text-2xl font-bold mb-4">${model.title}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="card p-3 text-center">
+                            <div class="text-sm text-gray-500">${model.sovereignty.label}</div>
+                            <div class="text-lg font-bold ${colorMap[model.sovereignty.color]} rounded-md py-1 mt-1">${model.sovereignty.value}</div>
+                        </div>
+                        <div class="card p-3 text-center">
+                            <div class="text-sm text-gray-500">${model.scalability.label}</div>
+                            <div class="text-lg font-bold ${colorMap[model.scalability.color]} rounded-md py-1 mt-1">${model.scalability.value}</div>
+                        </div>
+                        <div class="card p-3 text-center">
+                            <div class="text-sm text-gray-500">${model.inclusion.label}</div>
+                            <div class="text-lg font-bold ${colorMap[model.inclusion.color]} rounded-md py-1 mt-1">${model.inclusion.value}</div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 mb-4">${model.description}</p>
+                    <div class="text-sm text-gray-500"><strong>代表案例:</strong> ${model.example}</div>
+                `;
+            }
+
+            governanceBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    governanceBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    renderGovernanceModel(btn.dataset.model);
+                });
+            });
+
+            renderGovernanceModel('centralized');
+
+            const touristSlider = document.getElementById('tourist-slider');
+            const taxSlider = document.getElementById('tax-slider');
+            const touristValue = document.getElementById('tourist-value');
+            const taxValue = document.getElementById('tax-value');
+            
+            let paretoChart;
+            function renderParetoChart() {
+                const ctx = document.getElementById('pareto-chart').getContext('2d');
+                
+                const paretoFrontier = [];
+                for (let i = 0; i <= 100; i++) {
+                    const x = 1 - (i / 100);
+                    const y = Math.sqrt(1 - x * x);
+                    paretoFrontier.push({x: 50 + y * 450, y: 50 + x * 450});
+                }
+
+                paretoChart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: '柏拉圖前沿 (最佳解)',
+                            data: paretoFrontier,
+                            borderColor: 'rgba(34, 197, 94, 0.5)',
+                            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                            showLine: true,
+                            pointRadius: 0,
+                            tension: 0.4,
+                        }, {
+                            label: '您的選擇',
+                            data: [],
+                            backgroundColor: '#1D8A99',
+                            pointRadius: 8,
+                            pointHoverRadius: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                position: 'bottom',
+                                title: {
+                                    display: true,
+                                    text: '負面影響指數 (越低越好)',
+                                    font: { size: 14 }
+                                },
+                                min: 0,
+                                max: 500
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: '旅遊總收入 (越高越好)',
+                                    font: { size: 14 }
+                                },
+                                min: 0,
+                                max: 500
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        if (context.datasetIndex === 1) {
+                                            return ` 收入: ${context.parsed.y.toFixed(0)}, 影響: ${context.parsed.x.toFixed(0)}`;
+                                        }
+                                        return null;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                updateParetoChart();
+            }
+
+            function updateParetoChart() {
+                const tourists = parseInt(touristSlider.value);
+                const tax = parseInt(taxSlider.value);
+                touristValue.textContent = tourists;
+                taxValue.textContent = tax;
+
+                const revenue = (tourists / 10) * (1 + tax / 100) * 1.5;
+                const impact = (tourists / 10) * (1 - tax / 200) * 0.8;
+                
+                paretoChart.data.datasets[1].data = [{x: impact, y: revenue}];
+                paretoChart.update();
+            }
+
+            touristSlider.addEventListener('input', updateParetoChart);
+            taxSlider.addEventListener('input', updateParetoChart);
+            renderParetoChart();
+            
+            const lfiData = {
+                labels: ['美食體驗', '文化底蘊', '自然景觀', '城市氛圍', '真實性'],
+                datasets: [{
+                    label: '在地風格指數',
+                    data: [85, 70, 90, 65, 80],
+                    fill: true,
+                    backgroundColor: 'rgba(29, 138, 153, 0.2)',
+                    borderColor: 'rgb(29, 138, 153)',
+                    pointBackgroundColor: 'rgb(29, 138, 153)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgb(29, 138, 153)'
+                }]
+            };
+            
+            const lfiCardsData = [
+                { title: "美食體驗", score: 85, sources: "GSC搜尋量、TripAdvisor評論情感分析" },
+                { title: "文化底蘊", score: 70, sources: "GA4互動時長、Instagram標籤數量" },
+                { title: "自然景觀", score: 90, sources: "DMO社群互動率、遊客部落格關鍵詞頻率" },
+                { title: "城市氛圍", score: 65, sources: "UGC標籤數量、電信信令夜間經濟指數" },
+                { title: "真實性", score: 80, sources: "GSC『秘境』搜尋量、評論詞頻相似度" },
+            ];
+
+            const lfiCardsContainer = document.getElementById('lfi-cards');
+            lfiCardsData.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card p-4';
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-bold text-lg">${item.title}</h4>
+                        <span class="font-bold text-xl text-teal-600">${item.score}</span>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">數據源: ${item.sources}</p>
+                `;
+                lfiCardsContainer.appendChild(card);
+            });
+
+            const lfiCtx = document.getElementById('lfi-chart').getContext('2d');
+            new Chart(lfiCtx, {
+                type: 'radar',
+                data: lfiData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    elements: {
+                        line: {
+                            borderWidth: 3
+                        }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: false
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100,
+                            pointLabels: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

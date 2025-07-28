@@ -16,73 +16,97 @@
     <style>
         /* * 主要樣式設定
          * - 字體: 使用 system-ui，在 Apple 裝置上會自動選用 San Francisco。
-         * 在其他系統上則使用 Inter 作為優雅的替代方案。
-         * - 背景: 設計一個細微的漸層背景，以突顯卡片的玻璃擬態效果。
+         * - 背景: 設計一個更細微的漸層背景，以突顯卡片的玻璃擬態效果。
          * - 過渡效果: 為所有元素加上平滑的過渡動畫。
         */
         body {
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-            background-color: #f8f9fa; /* 使用一個非常淺的灰色作為背景 */
-            background-image: radial-gradient(circle at 1% 1%, rgba(0, 122, 255, 0.05), rgba(255, 255, 255, 0) 25%),
-                              radial-gradient(circle at 99% 99%, rgba(88, 86, 214, 0.05), rgba(255, 255, 255, 0) 25%);
+            background-color: #f5f5f7; /* 更新為 Apple 風格的淺灰色 */
+            background-image: radial-gradient(circle at 0% 0%, rgba(0, 122, 255, 0.03), transparent 20%),
+                              radial-gradient(circle at 100% 100%, rgba(88, 86, 214, 0.03), transparent 20%);
+        }
+
+        /* * 卡片進場動畫
+         * - 使用 keyframes 定義一個從下方輕微上移並淡入的效果。
+        */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .report-card {
             /* * 報告卡片基礎樣式
-             * - 圓角、陰影、邊框等設定，營造 Apple UI 的精緻感。
-             * - `transform` 與 `transition` 用於實現 hover 時的細微浮動與縮放效果。
+             * - 增加動畫屬性，並設定為隱藏以待觸發。
+             * - 邊框調整得更細緻。
             */
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+            opacity: 0; /* 初始隱藏 */
+            transform: translateY(20px); /* 初始位置 */
+        }
+        
+        .card-enter {
+            animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
 
         .report-card:hover {
-            /* * 滑鼠懸停效果
-             * - 陰影: 增強陰影，產生立體感。
-             * - 玻璃擬態: 使用 `backdrop-blur` 和半透明背景色來實現。
+            /* * 滑鼠懸停效果 (精緻化)
+             * - 增強陰影，產生立體感。
+             * - 玻璃擬態: 調整模糊度與背景色，效果更自然。
              * - 邊框: 改變邊框顏色，增加視覺回饋。
              * - transform: 輕微放大並向上移動，增加互動感。
             */
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-            background-color: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px); /* Safari 瀏覽器支援 */
-            border-color: rgba(0, 122, 255, 0.2);
+            transform: translateY(-10px) scale(1.03);
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.15);
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%); /* Safari 瀏覽器支援 */
+            border-color: rgba(0, 122, 255, 0.25);
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
+<body class="min-h-screen flex items-center justify-center p-4 sm:p-8 lg:p-12">
 
-    <div class="w-full max-w-6xl mx-auto">
+    <div class="w-full max-w-7xl mx-auto">
         
         <!-- 頁面標題 -->
-        <header class="text-center mb-12">
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 tracking-tight">
+        <header class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 tracking-tight">
                 台灣觀光研究分析
             </h1>
-            <p class="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
+            <p class="mt-5 text-lg text-gray-600 max-w-3xl mx-auto">
                 探索數據與洞察，擘劃台灣觀光產業的未來藍圖。
             </p>
         </header>
 
         <!-- 報告卡片網格 -->
-        <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             
             <!-- 卡片 1: 台灣觀光現況分析 -->
-            <a href="/data-analysis/taiwan-tourism-analysis-2025/" class="report-card block bg-white rounded-2xl p-8 shadow-md">
-                <div class="flex-grow">
-                    <h2 class="text-xl font-semibold text-gray-900">
+            <a href="/data-analytics/taiwan-tourism-analysis-2025/" class="report-card flex flex-col bg-white/80 rounded-3xl p-8 shadow-lg">
+                <div class="flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <div class="flex-grow mt-6">
+                    <h2 class="text-2xl font-semibold text-gray-900">
                         台灣觀光現況分析
                     </h2>
-                    <p class="mt-2 text-gray-600">
+                    <p class="mt-3 text-gray-600">
                         深入剖析 2025 年旅遊市場趨勢、旅客行為與產業挑戰。
                     </p>
                 </div>
-                <div class="mt-6">
+                <div class="mt-8">
                     <span class="text-blue-600 font-semibold flex items-center group">
                         閱讀報告
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1.5 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                         </svg>
                     </span>
@@ -90,19 +114,24 @@
             </a>
 
             <!-- 卡片 2: GenAI 觀光再造藍圖 -->
-            <a href="/data-analysis/genai-tourism-blueprint/" class="report-card block bg-white rounded-2xl p-8 shadow-md">
-                <div class="flex-grow">
-                    <h2 class="text-xl font-semibold text-gray-900">
+            <a href="/data-analytics/genai-tourism-blueprint/" class="report-card flex flex-col bg-white/80 rounded-3xl p-8 shadow-lg">
+                 <div class="flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.528l.259 1.035.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 18l1.036.259a3.375 3.375 0 002.455 2.456z" />
+                    </svg>
+                </div>
+                <div class="flex-grow mt-6">
+                    <h2 class="text-2xl font-semibold text-gray-900">
                         GenAI 觀光再造藍圖
                     </h2>
-                    <p class="mt-2 text-gray-600">
+                    <p class="mt-3 text-gray-600">
                         探索生成式 AI 如何重塑個人化旅遊體驗與智慧營運。
                     </p>
                 </div>
-                <div class="mt-6">
+                <div class="mt-8">
                     <span class="text-blue-600 font-semibold flex items-center group">
                         閱讀報告
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1.5 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                         </svg>
                     </span>
@@ -110,19 +139,24 @@
             </a>
 
             <!-- 卡片 3: 數據驅動觀光數據治理 -->
-            <a href="/data-analysis/data-driven-tourism/" class="report-card block bg-white rounded-2xl p-8 shadow-md">
-                <div class="flex-grow">
-                    <h2 class="text-xl font-semibold text-gray-900">
+            <a href="/data-analytics/data-driven-tourism/" class="report-card flex flex-col bg-white/80 rounded-3xl p-8 shadow-lg">
+                 <div class="flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.286zm0 13.036h.008v.008h-.008v-.008z" />
+                    </svg>
+                </div>
+                <div class="flex-grow mt-6">
+                    <h2 class="text-2xl font-semibold text-gray-900">
                         數據驅動觀光數據治理
                     </h2>
-                    <p class="mt-2 text-gray-600">
+                    <p class="mt-3 text-gray-600">
                         建立穩健的數據基礎建設，實現精準決策與永續發展。
                     </p>
                 </div>
-                <div class="mt-6">
+                <div class="mt-8">
                     <span class="text-blue-600 font-semibold flex items-center group">
                         閱讀報告
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1.5 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
                         </svg>
                     </span>
@@ -132,13 +166,27 @@
         </main>
 
         <!-- 頁尾：未來功能提示 -->
-        <footer class="text-center mt-16">
-            <p class="text-gray-400 text-sm">
+        <footer class="text-center mt-20">
+            <p class="text-gray-500 text-sm">
                 未來版本將支援：分類篩選、報告搜尋、個人化收藏等功能。
             </p>
         </footer>
 
     </div>
+    
+    <script>
+        // * JavaScript: 觸發卡片進場動畫
+        // * 當頁面載入完成後，為每張卡片加上 .card-enter class，
+        // * 並透過設定延遲，創造出流暢的、依序出現的動畫效果。
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.report-card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.add('card-enter');
+                }, index * 150); // 每張卡片延遲 150ms
+            });
+        });
+    </script>
 
 </body>
 </html>

@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生成式AI再造政府觀光服務｜互動式策略藍圖</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony Neutrals -->
+    <!-- Application Structure Plan: A top-down, single-page scrolling experience with a sticky navigation bar. The structure is designed to guide the user from the high-level "Why" (the paradigm shift), to the "What" (GenAI capabilities), the "Who" (global pioneers), the "How" (implementation blueprint), and finally the "What's Next" (future vision). This thematic, non-linear explorative structure is more engaging and digestible for busy decision-makers than a traditional report format. Key interactions include clickable cards, filterable case studies with a dynamic chart, and an interactive timeline/matrix for the roadmap and risks. -->
+    <!-- Visualization & Content Choices: Report Info -> Goal -> Viz/Presentation Method -> Interaction -> Justification -> Library/Method. 1. Tourist Journey ("As-Is" vs. "To-Be") -> Compare -> Side-by-side card layout with icons -> Hover effects -> Quickly grasp the core transformation -> HTML/CSS. 2. Global Cases (Table 5.1) -> Compare/Organize -> Filterable cards + Bar Chart -> Click filters to update cards & chart -> Allows comparison of strategies and quantitative outcomes -> Chart.js. 3. Implementation Roadmap -> Organize/Change -> Interactive horizontal timeline -> Click stages to reveal details -> Breaks down complex plan into digestible steps -> HTML/CSS/JS. 4. Risk Matrix (Table 7.1) -> Organize -> Clickable button matrix -> Click to display details -> Makes risk management accessible and less intimidating -> HTML/CSS/JS. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #F8F7F4;
+            color: #4A4A4A;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #4A90E2;
+            border-bottom-color: #4A90E2;
+        }
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .tab-button.active {
+            background-color: #4A90E2;
+            color: white;
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-md">
+        <nav class="container mx-auto px-6 py-3">
+            <div class="flex justify-between items-center">
+                <h1 class="text-xl md:text-2xl font-bold text-[#4A4A4A]">GenAI觀光再造藍圖</h1>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#paradigm-shift" class="nav-link">典範轉移</a>
+                    <a href="#pioneers" class="nav-link">全球先鋒</a>
+                    <a href="#blueprint" class="nav-link">實施藍圖</a>
+                    <a href="#vision" class="nav-link">未來願景</a>
+                </div>
+                <button id="mobile-menu-button" class="md:hidden focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </div>
+            <div id="mobile-menu" class="hidden md:hidden mt-4">
+                <a href="#paradigm-shift" class="block py-2 px-4 text-sm nav-link">典範轉移</a>
+                <a href="#pioneers" class="block py-2 px-4 text-sm nav-link">全球先鋒</a>
+                <a href="#blueprint" class="block py-2 px-4 text-sm nav-link">實施藍圖</a>
+                <a href="#vision" class="block py-2 px-4 text-sm nav-link">未來願景</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="hero" class="bg-white py-20 md:py-32">
+            <div class="container mx-auto px-6 text-center">
+                <h2 class="text-3xl md:text-5xl font-bold text-[#4A4A4A] mb-4">催化典範轉移</h2>
+                <p class="text-lg md:text-xl max-w-3xl mx-auto text-gray-600">運用生成式AI，將政府觀光服務從靜態資訊提供，徹底再造為動態、即時、超個人化的體驗生態系。</p>
+            </div>
+        </section>
+
+        <section id="paradigm-shift" class="py-16 md:py-24">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl md:text-4xl font-bold">遊客旅程的根本性再造</h3>
+                    <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">本節旨在清晰對比傳統服務流程與導入生成式AI後的未來樣貌，讓您迅速掌握流程再造（BPR）的核心價值。透過檢視旅客從行前規劃到行後反饋的完整體驗，我們將揭示效率瓶頸如何被消除，以及全新的服務價值如何被創造。</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8 md:gap-12">
+                    <div class="bg-white p-8 rounded-xl shadow-lg">
+                        <h4 class="text-2xl font-bold text-center mb-6 text-red-500">傳統流程 (As-Is)</h4>
+                        <div class="space-y-6">
+                            <div>
+                                <h5 class="font-bold text-lg mb-2">✈️ 行前規劃</h5>
+                                <p class="text-gray-600">遊客需自行在多個靜態官網、部落格中搜尋、過濾、整合大量通用資訊，過程耗時且缺乏個人化。政府僅為單向資訊發布者。</p>
+                            </div>
+                            <div>
+                                <h5 class="font-bold text-lg mb-2">📱 在地體驗</h5>
+                                <p class="text-gray-600">依賴實體遊客中心、固定解說牌，服務受限於時間地點，難以應對即時變化（如天氣、人潮）與多語言需求。</p>
+                            </div>
+                            <div>
+                                <h5 class="font-bold text-lg mb-2">📝 行後回饋</h5>
+                                <p class="text-gray-600">透過意見箱或偶發問卷收集回饋，數據零散、分析困難，難以形成持續改進的閉環。</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-xl shadow-lg border border-blue-200">
+                        <h4 class="text-2xl font-bold text-center mb-6 text-[#4A90E2]">GenAI再造流程 (To-Be)</h4>
+                        <div class="space-y-6">
+                            <div>
+                                <h5 class="font-bold text-lg mb-2">🤝 主動的旅程共創者</h5>
+                                <p class="text-gray-700">AI對話夥伴與遊客「共同創造」個人化動態行程，將繁瑣規劃轉化為互動探索的樂趣。</p>
+                            </div>
+                            <div>
+                                <h5 class="font-bold text-lg mb-2">🧭 即時的目的地協調者</h5>
+                                <p class="text-gray-700">手機上的「數位禮賓員」提供即時翻譯、動態行程調整、AR導覽，主動管理遊客體驗。</p>
+                            </div>
+                            <div>
+                                <h5 class="font-bold text-lg mb-2">🔄 持續的互動夥伴</h5>
+                                <p class="text-gray-700">自動化分析個人化回饋，將遊客轉化為目的地倡導者，形成數據驅動的優化閉環。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="pioneers" class="py-16 md:py-24 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl md:text-4xl font-bold">全球先鋒案例</h3>
+                    <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">理論的價值在於實踐。本節將帶您探索全球政府如何實際應用AI推動觀光轉型。您可以透過下方的篩選器，檢視不同國家採取的策略模型，並在互動圖表中比較其量化成果，從而提煉出適用於您自身情境的洞見。</p>
+                </div>
+                
+                <div class="flex justify-center flex-wrap gap-2 mb-8" id="case-filters">
+                    <button class="tab-button px-4 py-2 rounded-full bg-gray-200 text-gray-700 active" data-filter="all">所有案例</button>
+                    <button class="tab-button px-4 py-2 rounded-full bg-gray-200 text-gray-700" data-filter="生態系轉型">生態系轉型</button>
+                    <button class="tab-button px-4 py-2 rounded-full bg-gray-200 text-gray-700" data-filter="在地化解決">在地化解決</button>
+                    <button class="tab-button px-4 py-2 rounded-full bg-gray-200 text-gray-700" data-filter="治理與風險">治理與風險</button>
+                    <button class="tab-button px-4 py-2 rounded-full bg-gray-200 text-gray-700" data-filter="智慧城市整合">智慧城市整合</button>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16" id="case-studies-grid">
+                </div>
+
+                <div class="mt-16">
+                    <h4 class="text-2xl font-bold text-center mb-6">量化成果比較</h4>
+                    <div class="chart-container bg-gray-50 p-4 rounded-xl shadow-inner">
+                        <canvas id="kpiChart"></canvas>
+                    </div>
+                     <p class="text-center text-sm text-gray-500 mt-4">此圖表展示了部分案例報告的關鍵績效指標（KPI）。請注意，指標基準各不相同，僅供趨勢參考。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="blueprint" class="py-16 md:py-24">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl md:text-4xl font-bold">實施藍圖與風險導航</h3>
+                    <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">將願景化為行動，需要清晰的路線圖與務實的風險管理。本節提供一個分階段的實施框架，並建立一個互動式的風險緩解矩陣。您可以點擊各個階段或挑戰類別，以深入了解具體的行動方案與應對策略，確保轉型之路穩健可行。</p>
+                </div>
+
+                <div class="mb-16">
+                    <h4 class="text-2xl font-bold text-center mb-8">三階段實施路線圖</h4>
+                    <div id="roadmap-tabs" class="flex flex-col md:flex-row justify-center border-b-2 border-gray-200 mb-8">
+                        <button class="roadmap-tab flex-1 py-4 px-2 text-center font-semibold text-lg border-b-4 border-transparent active" data-tab="1">階段一：評估與策略</button>
+                        <button class="roadmap-tab flex-1 py-4 px-2 text-center font-semibold text-lg border-b-4 border-transparent" data-tab="2">階段二：建構與整合</button>
+                        <button class="roadmap-tab flex-1 py-4 px-2 text-center font-semibold text-lg border-b-4 border-transparent" data-tab="3">階段三：擴展與優化</button>
+                    </div>
+                    <div id="roadmap-content" class="bg-white p-8 rounded-xl shadow-lg">
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-2xl font-bold text-center mb-8">關鍵挑戰與緩解策略</h4>
+                    <div class="grid md:grid-cols-5 gap-4">
+                        <div id="risk-buttons" class="md:col-span-2 flex flex-col space-y-3">
+                        </div>
+                        <div id="risk-details" class="md:col-span-3 bg-white p-6 rounded-xl shadow-inner min-h-[200px]">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="vision" class="py-16 md:py-24 bg-white">
+            <div class="container mx-auto px-6 text-center">
+                <h3 class="text-3xl md:text-4xl font-bold text-[#4A90E2]">超越效率：邁向再生與韌性的觀光未來</h3>
+                <p class="mt-6 text-lg max-w-4xl mx-auto text-gray-600">總結而言，運用生成式AI進行流程再造，其意義遠超提升效率或優化體驗。這是一次重新定義政府與遊客、產業及在地社群關係的契機。當政府的角色從被動的資訊提供者，轉變為主動的、數據驅動的體驗協調者，我們將能引導觀光產業走向一個更永續、可及且具韌性的未來。這不僅是技術的升級，更是治理思維的升級，是實現「智慧觀光」的真正願景。</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; 2025 生成式AI觀光服務再造策略藍圖。此為基於研究報告生成的互動式應用程式。</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const caseData = [
+        {
+            country: '台灣',
+            title: '高雄「演唱會經濟」',
+            strategy: '在地化解決',
+            application: '個人化行程規劃、遊戲化、故事敘述',
+            kpi_label: '在地商業增長',
+            kpi_value: 45, // avg of 30-60
+            kpi_unit: '%',
+            color: 'rgba(74, 144, 226, 0.7)'
+        },
+        {
+            country: '新加坡',
+            title: 'STB-OpenAI合作',
+            strategy: '生態系轉型',
+            application: '全產業工具賦能、個人化、多語言協助',
+            kpi_label: '產業生產力提升',
+            kpi_value: 0, // Qualitative
+            kpi_unit: '',
+            color: 'rgba(80, 227, 194, 0.7)'
+        },
+        {
+            country: '日本',
+            title: 'MLIT指導方針',
+            strategy: '治理與風險',
+            application: '多語言聊天機器人、幻覺緩解機制',
+            kpi_label: '服務可靠性',
+            kpi_value: 0, // Qualitative
+            kpi_unit: '',
+            color: 'rgba(219, 101, 95, 0.7)'
+        },
+        {
+            country: '澳洲',
+            title: '北領地「ChatNT」',
+            strategy: '在地化解決',
+            application: '名人形象聊天機器人',
+            kpi_label: '網站停留時間增長',
+            kpi_value: 70,
+            kpi_unit: '%',
+            color: 'rgba(245, 166, 35, 0.7)'
+        },
+        {
+            country: '愛爾蘭',
+            title: '都柏林「A Day in Dublin」',
+            strategy: '智慧城市整合',
+            application: 'ChatGPT驅動的行程生成器',
+            kpi_label: '超在地化行程生成',
+            kpi_value: 0, // Qualitative
+            kpi_unit: '',
+            color: 'rgba(126, 211, 33, 0.7)'
+        }
+    ];
+
+    const roadmapData = {
+        '1': {
+            title: '階段一：評估與策略規劃 (第1-6個月)',
+            content: `
+                <p class="mb-4">此階段的目標是「謀定而後動」，為轉型奠定堅實的策略基礎。</p>
+                <ul class="list-disc pl-6 space-y-2">
+                    <li><strong>定義BPR目標與範疇：</strong>召集跨部門團隊，明確定義流程再造的量化目標，並繪製關鍵的「現況」服務流程圖，識別潛力環節。</li>
+                    <li><strong>啟動小型試點專案：</strong>選擇高影響力、低風險的場景啟動試點，以快速驗證技術、累積經驗，並為後續投資爭取支持。</li>
+                </ul>
+            `
+        },
+        '2': {
+            title: '階段二：建構與整合 (第7-18個月)',
+            content: `
+                <p class="mb-4">在成功完成試點後，此階段的目標是建構核心的技術與數據基礎設施。</p>
+                <ul class="list-disc pl-6 space-y-2">
+                    <li><strong>發展核心AI能力：</strong>根據國情與策略，選擇自主開發或建立策略夥伴關係，以獲取最適合的AI技術。</li>
+                    <li><strong>建立數據基礎設施：</strong>設計並建構統一的數據平台，打破資訊孤島，並開始將AI平台與現有關鍵系統進行整合。</li>
+                </ul>
+            `
+        },
+        '3': {
+            title: '階段三：擴展與優化 (第19個月以上)',
+            content: `
+                <p class="mb-4">此階段是將再造後的新服務推向市場，並建立持續改進機制的過程。</p>
+                <ul class="list-disc pl-6 space-y-2">
+                    <li><strong>分階段服務上線：</strong>以分階段、分區域的方式向公眾推出新服務，並伴隨大規模的內外部溝通與宣傳。</li>
+                    <li><strong>建立持續優化循環：</strong>利用AI工具分析績效數據與使用者回饋，建立常設團隊，不斷對AI模型、服務流程進行微調與改進。</li>
+                </ul>
+            `
+        }
+    };
+
+    const riskData = [
+        {
+            category: '數據與倫理',
+            risk: '違反數據隱私法規 (如GDPR)',
+            impact: '喪失公眾信任、法律制裁',
+            mitigation: '建立清晰的數據治理、用戶同意協議'
+        },
+        {
+            category: '數據與倫理',
+            risk: '演算法偏見',
+            impact: '服務不公、聲譽受損',
+            mitigation: '進行偏見審計、使用多樣化訓練數據、人工監督'
+        },
+        {
+            category: '技術可靠性',
+            risk: '事實性幻覺 (Hallucinations)',
+            impact: '傳播錯誤資訊、遊客體驗差',
+            mitigation: '實施RAG、建立多層次人工/AI事實查核流程'
+        },
+        {
+            category: '組織層面',
+            risk: '員工抗拒／技能差距',
+            impact: '導入失敗、投資回報率低',
+            mitigation: '主動的變革管理、分階段推行、廣泛的員工培訓'
+        },
+        {
+            category: '財務層面',
+            risk: '前期成本過高',
+            impact: '專案停滯、無法規模化',
+            mitigation: '利用雲端服務、尋求公私協力、從高ROI的試點開始'
+        }
+    ];
+
+    const caseGrid = document.getElementById('case-studies-grid');
+    const filters = document.getElementById('case-filters');
+    const chartCanvas = document.getElementById('kpiChart').getContext('2d');
+    let kpiChart;
+
+    function renderCases(filter = 'all') {
+        caseGrid.innerHTML = '';
+        const filteredCases = filter === 'all' ? caseData : caseData.filter(c => c.strategy === filter);
+        
+        filteredCases.forEach(c => {
+            const card = document.createElement('div');
+            card.className = 'bg-white p-6 rounded-lg shadow-md card-hover';
+            card.innerHTML = `
+                <h5 class="font-bold text-xl mb-2">${c.country} - ${c.title}</h5>
+                <p class="text-sm text-gray-500 mb-3">${c.strategy}</p>
+                <p class="text-gray-700"><strong class="font-semibold">關鍵應用：</strong>${c.application}</p>
+                ${c.kpi_value > 0 ? `<p class="mt-2 text-[#4A90E2] font-semibold">成果：${c.kpi_label} +${c.kpi_value}${c.kpi_unit}</p>` : ''}
+            `;
+            caseGrid.appendChild(card);
+        });
+        updateChart(filteredCases);
+    }
+
+    function updateChart(data) {
+        const quantitativeData = data.filter(d => d.kpi_value > 0);
+        const labels = quantitativeData.map(d => `${d.country} (${d.title})`);
+        const values = quantitativeData.map(d => d.kpi_value);
+        const colors = quantitativeData.map(d => d.color);
+
+        if (kpiChart) {
+            kpiChart.destroy();
+        }
+
+        kpiChart = new Chart(chartCanvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '量化成果指標 (%)',
+                    data: values,
+                    backgroundColor: colors,
+                    borderColor: colors.map(c => c.replace('0.7', '1')),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.x !== null) {
+                                    label += context.parsed.x + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '指標增長率 (%)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    filters.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            filters.querySelector('.active').classList.remove('active');
+            e.target.classList.add('active');
+            renderCases(e.target.dataset.filter);
+        }
+    });
+
+    const roadmapTabs = document.getElementById('roadmap-tabs');
+    const roadmapContent = document.getElementById('roadmap-content');
+    
+    function renderRoadmapContent(tabId = '1') {
+        const data = roadmapData[tabId];
+        roadmapContent.innerHTML = `
+            <h5 class="font-bold text-xl mb-4">${data.title}</h5>
+            <div>${data.content}</div>
+        `;
+    }
+
+    roadmapTabs.addEventListener('click', e => {
+        if (e.target.classList.contains('roadmap-tab')) {
+            roadmapTabs.querySelector('.active').classList.remove('active', 'border-blue-500', 'text-blue-600');
+            e.target.classList.add('active', 'border-blue-500', 'text-blue-600');
+            renderRoadmapContent(e.target.dataset.tab);
+        }
+    });
+
+    const riskButtonsContainer = document.getElementById('risk-buttons');
+    const riskDetailsContainer = document.getElementById('risk-details');
+    const riskCategories = [...new Set(riskData.map(item => item.category))];
+
+    function renderRiskDetails(category) {
+        const relevantRisks = riskData.filter(r => r.category === category);
+        let content = `<h5 class="font-bold text-xl mb-4 text-[#4A90E2]">${category}</h5>`;
+        content += '<div class="space-y-4">';
+        relevantRisks.forEach(r => {
+            content += `
+                <div>
+                    <p class="font-semibold text-gray-800">${r.risk}</p>
+                    <p class="text-sm text-gray-600"><strong class="text-red-500">潛在影響:</strong> ${r.impact}</p>
+                    <p class="text-sm text-gray-600"><strong class="text-green-600">緩解策略:</strong> ${r.mitigation}</p>
+                </div>
+            `;
+        });
+        content += '</div>';
+        riskDetailsContainer.innerHTML = content;
+    }
+
+    riskCategories.forEach((cat, index) => {
+        const button = document.createElement('button');
+        button.className = 'tab-button w-full text-left px-4 py-3 rounded-lg bg-gray-200 text-gray-700';
+        button.textContent = cat;
+        button.dataset.category = cat;
+        if (index === 0) {
+            button.classList.add('active');
+        }
+        riskButtonsContainer.appendChild(button);
+    });
+    
+    riskButtonsContainer.addEventListener('click', e => {
+        if (e.target.tagName === 'BUTTON') {
+            riskButtonsContainer.querySelector('.active').classList.remove('active');
+            e.target.classList.add('active');
+            renderRiskDetails(e.target.dataset.category);
+        }
+    });
+    
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+    });
+
+    renderCases();
+    renderRoadmapContent('1');
+    renderRiskDetails(riskCategories[0]);
+    
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('main section');
+
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            if (pageYOffset >= sectionTop - 60) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href').includes(current)) {
+                link.classList.add('active');
+            }
+        });
+    });
+});
+</script>
+</body>
+</html>

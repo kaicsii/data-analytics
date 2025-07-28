@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台灣觀光儀表板：互動式報告</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: The SPA is designed as a narrative journey. It starts with the most dramatic finding (the tourism deficit) to hook the user. Then, it presents the dual nature of the problem (international vs. domestic) in a switchable view. Following this, it diagnoses the four core structural issues in an interactive grid. Finally, it presents a hopeful path forward through case studies and tech solutions. This thematic, non-linear structure prioritizes user understanding and exploration over simply replicating the report's linear format, guiding the user from problem identification to potential solutions in an engaging flow. -->
+    <!-- Visualization & Content Choices: 1. Tourism Deficit (Line Chart): Goal=Compare/Change, Viz=Line Chart, Interaction=Hover tooltips, Justification=Clearly shows the widening gap over time, Library=Chart.js. 2. Inbound Markets (Bar Chart): Goal=Compare, Viz=Bar Chart, Interaction=Click to show details, Justification=Interactive way to explore source markets instead of a static table, Library=Chart.js. 3. Domestic Travel (Donut Chart): Goal=Proportion, Viz=Donut Chart, Interaction=Hover tooltips, Justification=Effectively highlights the >75% day-trip issue, Library=Chart.js. 4. Structural Problems (Interactive Cards): Goal=Organize/Inform, Viz=Icon-based cards, Interaction=Click to expand, Justification=Breaks down dense text into digestible, interactive components, Library=HTML/JS. 5. Success Stories (Card Carousel): Goal=Inspire/Inform, Viz=Image/Text Cards, Interaction=Click to navigate, Justification=Visually engaging way to showcase positive examples, Library=HTML/JS. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #F8F7F4;
+            color: #3D3D3D;
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #5A8A82;
+            border-bottom-color: #5A8A82;
+        }
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 40vh;
+            width: 100%;
+            max-width: 800px;
+            max-height: 400px;
+        }
+        .section-card {
+            background-color: #FFFFFF;
+            border: 1px solid #EFEBE6;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .section-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.07);
+        }
+        .tab-button {
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .tab-button.active {
+            background-color: #5A8A82;
+            color: #FFFFFF;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #FFFFFF;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            max-width: 90%;
+            width: 500px;
+            transform: scale(0.95);
+            transition: transform 0.3s;
+        }
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-40 w-full border-b border-gray-200">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-[#3D3D3D]">台灣觀光儀表板</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#dilemma" class="nav-link px-3 py-2 rounded-md text-sm font-medium">核心困境</a>
+                        <a href="#analysis" class="nav-link px-3 py-2 rounded-md text-sm font-medium">市場剖析</a>
+                        <a href="#challenges" class="nav-link px-3 py-2 rounded-md text-sm font-medium">結構挑戰</a>
+                        <a href="#solutions" class="nav-link px-3 py-2 rounded-md text-sm font-medium">轉型藍圖</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <section id="hero" class="text-center mb-16">
+            <h2 class="text-4xl md:text-5xl font-bold text-[#5A8A82] tracking-tight mb-4">觀光的十字路口</h2>
+            <p class="max-w-3xl mx-auto text-lg text-gray-600">台灣觀光正處於關鍵轉捩點。國內旅遊人次創高，卻深陷「量增質不升」的淺碟化困境；國際市場緩步復甦，但巨大的「觀光逆差」揭示了產業深層的價值危機。本儀表板將帶您深入探索數據背後的真相。</p>
+        </section>
+
+        <section id="dilemma" class="mb-20 scroll-mt-20">
+            <div class="text-center mb-10">
+                <h3 class="text-3xl font-bold text-gray-800 mb-2">核心困境：日益擴大的觀光逆差</h3>
+                <p class="text-md text-gray-500 max-w-2xl mx-auto">2024年，國人出國人次(1,685萬)遠超過國際來台旅客(786萬)，形成近900萬人次的巨大逆差。這不僅是數字失衡，更是市場對國內旅遊吸引力與價值的警訊。下圖呈現了此趨勢的變化，您可將滑鼠懸停在圖表上查看詳細數據。</p>
+            </div>
+            <div class="section-card p-4 md:p-6">
+                <div class="chart-container">
+                    <canvas id="tourismDeficitChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="analysis" class="mb-20 scroll-mt-20">
+            <div class="text-center mb-10">
+                <h3 class="text-3xl font-bold text-gray-800 mb-2">市場剖析：一體兩面的觀光真相</h3>
+                <p class="text-md text-gray-500 max-w-2xl mx-auto">台灣的觀光市場呈現兩種截然不同的景象。請點擊下方按鈕，切換檢視「國際入境」與「國內旅遊」的詳細分析，了解各自的亮點與隱憂。</p>
+            </div>
+
+            <div class="flex justify-center mb-6">
+                <div class="inline-flex rounded-md shadow-sm" role="group">
+                    <button type="button" id="showInboundBtn" class="tab-button active px-6 py-3 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-l-lg hover:bg-gray-100">
+                        國際入境市場
+                    </button>
+                    <button type="button" id="showDomesticBtn" class="tab-button px-6 py-3 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-r-lg hover:bg-gray-100">
+                        國內旅遊市場
+                    </button>
+                </div>
+            </div>
+
+            <div id="inboundContent" class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-center">
+                <div class="lg:col-span-3 section-card p-4 md:p-6">
+                    <h4 class="text-xl font-semibold text-center mb-4">2024年主要入境客源國</h4>
+                    <div class="chart-container h-[50vh] max-h-[450px]">
+                        <canvas id="inboundSourceChart"></canvas>
+                    </div>
+                </div>
+                <div id="inboundDetails" class="lg:col-span-2 text-gray-700 space-y-4">
+                     <p class="text-center text-gray-500">點擊左方圖表中的國家，查看其來台旅遊的關鍵驅動或抑制因素。</p>
+                </div>
+            </div>
+
+            <div id="domesticContent" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div class="section-card p-4 md:p-6">
+                    <h4 class="text-xl font-semibold text-center mb-4">國旅模式：淺碟化現象</h4>
+                     <div class="chart-container h-[40vh] max-h-[350px]">
+                        <canvas id="domesticPatternChart"></canvas>
+                    </div>
+                </div>
+                <div class="text-gray-700">
+                    <h4 class="text-2xl font-bold mb-4">量體與價值的悖論</h4>
+                    <p class="mb-4">2024年國旅總旅次高達2.22億，創下歷史新高。然而，榮景之下潛藏危機：超過 <span class="text-2xl font-bold text-[#5A8A82]">75%</span> 為「當日來回」的一日遊。</p>
+                    <p>這種「淺碟化」旅遊模式，意味著旅客雖多，卻未能有效轉化為旅宿業的收入，形成「人潮洶湧，住房率卻停滯」的窘境，反映出國旅產品在價值深化上的系統性問題。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="challenges" class="mb-20 scroll-mt-20">
+            <div class="text-center mb-10">
+                <h3 class="text-3xl font-bold text-gray-800 mb-2">結構挑戰：阻礙成長的四大裂痕</h3>
+                <p class="text-md text-gray-500 max-w-2xl mx-auto">台灣觀光面臨的問題盤根錯節，並非單一因素造成。以下四大結構性弱點相互交織，形成難以掙脫的負面循環。點擊卡片了解更多細節。</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="challenge-card section-card p-6 text-center cursor-pointer" data-challenge="value">
+                    <div class="text-4xl mb-4">💰</div>
+                    <h4 class="text-xl font-semibold mb-2">價值主張危機</h4>
+                    <p class="text-sm text-gray-500">高昂成本與低CP值，導致「去墾丁不如玩沖繩」的普遍觀感。</p>
+                </div>
+                <div class="challenge-card section-card p-6 text-center cursor-pointer" data-challenge="homogeneity">
+                    <div class="text-4xl mb-4">🎭</div>
+                    <h4 class="text-xl font-semibold mb-2">同質化陷阱</h4>
+                    <p class="text-sm text-gray-500">老街、景點內容高度相似，缺乏獨特性，難以吸引深度停留。</p>
+                </div>
+                <div class="challenge-card section-card p-6 text-center cursor-pointer" data-challenge="infrastructure">
+                    <div class="text-4xl mb-4">🚶‍♂️</div>
+                    <h4 class="text-xl font-semibold mb-2">基礎設施缺口</h4>
+                    <p class="text-sm text-gray-500">都會區外交通不便與「行人地獄」，阻礙自由行旅客探索。</p>
+                </div>
+                 <div class="challenge-card section-card p-6 text-center cursor-pointer" data-challenge="labor">
+                    <div class="text-4xl mb-4">👥</div>
+                    <h4 class="text-xl font-semibold mb-2">人力資本赤字</h4>
+                    <p class="text-sm text-gray-500">史上最嚴峻缺工潮，直接衝擊服務品質與產業營運量能。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="solutions" class="scroll-mt-20">
+            <div class="text-center mb-10">
+                <h3 class="text-3xl font-bold text-gray-800 mb-2">轉型藍圖：邁向高價值永續觀光</h3>
+                <p class="text-md text-gray-500 max-w-2xl mx-auto">挑戰中亦見契機。台灣觀光的未來，繫於能否成功推動戰略轉型，從追求「人次」轉向提升「價值」。解決之道已在各地悄然萌芽。</p>
+            </div>
+            <div class="bg-white rounded-lg shadow-inner p-8 border border-gray-200">
+                <h4 class="text-2xl font-bold text-center mb-8 text-[#5A8A82]">價值創造的成功方程式：地方創生 x 永續旅遊</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="text-center">
+                        <div class="text-5xl mb-3">🌿</div>
+                        <h5 class="font-semibold text-lg">社群引領的生態旅遊</h5>
+                        <p class="text-sm text-gray-600">如阿里山鄒族部落、屏東社頂部落，由在地人講述自身故事，創造無法複製的真實體驗。</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-5xl mb-3">🏞️</div>
+                        <h5 class="font-semibold text-lg">地景與遺產的再生</h5>
+                        <p class="text-sm text-gray-600">如雲林草嶺石壁森林療癒基地，結合在地產業，將災後地區轉型為國際級療癒目的地。</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-5xl mb-3">♻️</div>
+                        <h5 class="font-semibold text-lg">永續的景區管理</h5>
+                        <p class="text-sm text-gray-600">如基隆和平島公園，透過總量管制與環境教育，實現生態保育與觀光發展的共存共榮。</p>
+                    </div>
+                </div>
+                 <div class="mt-10 pt-6 border-t border-gray-200">
+                    <h4 class="text-2xl font-bold text-center mb-8 text-[#5A8A82]">科技賦能：打造無縫的優質體驗</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                         <div class="text-center">
+                            <div class="text-5xl mb-3">📱</div>
+                            <h5 class="font-semibold text-lg">MaaS 交通即服務</h5>
+                            <p class="text-sm text-gray-600">整合高鐵、台鐵、客運等，提供一站式路線規劃、訂票與支付，解決交通破碎化問題。</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-5xl mb-3">✨</div>
+                            <h5 class="font-semibold text-lg">數位敘事 (AR/VR)</h5>
+                            <p class="text-sm text-gray-600">為古蹟、景點注入靈魂，透過科技重現歷史場景或文化體驗，對抗同質化。</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-5xl mb-3">🤖</div>
+                            <h5 class="font-semibold text-lg">AI 驅動個人化服務</h5>
+                            <p class="text-sm text-gray-600">以智能客服處理旅客諮詢，釋放寶貴人力，並提供個人化的旅遊推薦。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-sm">
+            <p>本互動式報告根據「台灣觀光十字路口：後疫情復甦、結構性挑戰與戰略轉型之深度解析」報告製作。</p>
+            <p class="text-gray-400 mt-1">資料視覺化與介面設計旨在促進資訊的理解與探索。</p>
+        </div>
+    </footer>
+
+    <div id="challengeModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modalTitle" class="text-2xl font-bold mb-4 text-[#5A8A82]"></h3>
+            <div id="modalBody" class="text-gray-700 space-y-3"></div>
+            <button id="closeModalBtn" class="mt-6 w-full bg-[#5A8A82] text-white font-bold py-2 px-4 rounded-lg hover:bg-opacity-90 transition">關閉</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tourismData = {
+                deficit: {
+                    years: ['2019 (疫情前)', '2023', '2024'],
+                    inbound: [11.86, 6.49, 7.86],
+                    outbound: [17.10, 11.80, 16.85],
+                },
+                inbound: {
+                    countries: ['日本', '香港', '韓國', '美國', '菲律賓'],
+                    visitors: [131.9, 119.8, 100.3, 65.1, 46.7],
+                    details: {
+                        '日本': { title: '日本 (131.9萬人)', reason: '抑制因素：日圓持續疲軟，大幅削弱海外消費能力，導致來台旅遊的相對成本提高。', color: '#FF6384' },
+                        '香港': { title: '香港 (119.8萬人)', reason: '驅動因素：地理鄰近、文化語言相通，以及對台灣多元美食與平價物價的正面印象。', color: '#36A2EB' },
+                        '韓國': { title: '韓國 (100.3萬人)', reason: '驅動因素：被視為赴日旅遊的絕佳替代選擇、短程飛行便利性，以及台灣流行文化的吸引力。', color: '#FFCE56' },
+                        '美國': { title: '美國 (65.1萬人)', reason: '驅動因素：極高的社會安全、便利的大眾運輸(尤其台北)，以及相對低廉的物價。', color: '#4BC0C0' },
+                        '菲律賓': { title: '菲律賓 (46.7萬人)', reason: '驅動因素：政府推行的免簽政策、地理鄰近與美食多樣化。', color: '#9966FF' }
+                    }
+                },
+                domestic: {
+                    labels: ['當日來回 (一日遊)', '過夜住宿'],
+                    data: [75, 25]
+                },
+                challenges: {
+                    value: {
+                        title: '價值主張危機 (高成本、低CP值)',
+                        content: `<p>社會普遍認為國內旅遊定價過高，性價比嚴重不足，產生「去墾丁不如玩沖繩」的抱怨。</p><p>部分業者追求短期利潤，於旺季抬高價格，而非投資提升服務品質，進一步強化了「又貴又差」的負面刻板印象。</p>`
+                    },
+                    homogeneity: {
+                        title: '同質化陷阱 (缺乏獨特體驗)',
+                        content: `<p>從北到南，許多老街、夜市販售的商品與小吃大同小異，遊客體驗重複性過高。</p><p>觀光建設出現大量低創意的複製現象(如天空步道、彩繪村)，反映出產業過度依賴硬體，忽略了獨特的文化敘事與體驗設計。</p>`
+                    },
+                    infrastructure: {
+                        title: '基礎設施缺口 (交通與可及性)',
+                        content: `<p><strong>交通斷點：</strong>離開大台北後，大眾運輸整合度與便利性顯著下降，對國際自由行旅客極不友善。</p><p><strong>行人地獄：</strong>惡劣的行人環境被國外旅客反覆提及，已成影響台灣觀光形象的一大污點。</p>`
+                    },
+                    labor: {
+                        title: '人力資本赤字 (嚴重勞動力短缺)',
+                        content: `<p>觀光旅宿業正深陷史上最嚴峻的缺工潮，尤以房務與第一線服務人員最為嚴重。</p><p>缺工直接衝擊服務品質，許多飯店被迫延後入住、提早退房，甚至有五星飯店總經理需親自鋪床的窘境。</p>`
+                    }
+                }
+            };
+
+            const options = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            font: {
+                                family: "'Noto Sans TC', sans-serif"
+                            }
+                        }
+                    },
+                    tooltip: {
+                        titleFont: { family: "'Noto Sans TC', sans-serif" },
+                        bodyFont: { family: "'Noto Sans TC', sans-serif" }
+                    }
+                },
+                scales: {
+                    x: { ticks: { font: { family: "'Noto Sans TC', sans-serif" } } },
+                    y: { ticks: { font: { family: "'Noto Sans TC', sans-serif" } } }
+                }
+            };
+            
+            new Chart(document.getElementById('tourismDeficitChart'), {
+                type: 'line',
+                data: {
+                    labels: tourismData.deficit.years,
+                    datasets: [
+                        {
+                            label: '國人出國人次 (百萬)',
+                            data: tourismData.deficit.outbound,
+                            borderColor: '#FF6384',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            fill: true,
+                            tension: 0.1
+                        },
+                        {
+                            label: '國際入境旅客人次 (百萬)',
+                            data: tourismData.deficit.inbound,
+                            borderColor: '#36A2EB',
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            fill: true,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: { ...options, scales: { ...options.scales, y: { ...options.scales.y, title: { display: true, text: '人次 (百萬)' } } } }
+            });
+
+            const inboundChart = new Chart(document.getElementById('inboundSourceChart'), {
+                type: 'bar',
+                data: {
+                    labels: tourismData.inbound.countries,
+                    datasets: [{
+                        label: '入境人次 (萬)',
+                        data: tourismData.inbound.visitors,
+                        backgroundColor: Object.values(tourismData.inbound.details).map(d => d.color),
+                    }]
+                },
+                options: {
+                    ...options,
+                    indexAxis: 'y',
+                    onClick: (evt, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const country = tourismData.inbound.countries[index];
+                            const details = tourismData.inbound.details[country];
+                            const detailsDiv = document.getElementById('inboundDetails');
+                            detailsDiv.innerHTML = `
+                                <h5 class="text-xl font-bold text-gray-800">${details.title}</h5>
+                                <p class="text-md">${details.reason}</p>
+                            `;
+                        }
+                    },
+                    plugins: { ...options.plugins, legend: { display: false } },
+                    scales: { ...options.scales, x: { ...options.scales.x, title: { display: true, text: '人次 (萬)' } } }
+                }
+            });
+
+            new Chart(document.getElementById('domesticPatternChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: tourismData.domestic.labels,
+                    datasets: [{
+                        data: tourismData.domestic.data,
+                        backgroundColor: ['#FFCE56', '#5A8A82'],
+                    }]
+                },
+                options: { ...options, scales: { x: { display: false }, y: { display: false } } }
+            });
+
+            const showInboundBtn = document.getElementById('showInboundBtn');
+            const showDomesticBtn = document.getElementById('showDomesticBtn');
+            const inboundContent = document.getElementById('inboundContent');
+            const domesticContent = document.getElementById('domesticContent');
+
+            showInboundBtn.addEventListener('click', () => {
+                inboundContent.style.display = 'grid';
+                domesticContent.style.display = 'none';
+                showInboundBtn.classList.add('active');
+                showDomesticBtn.classList.remove('active');
+            });
+
+            showDomesticBtn.addEventListener('click', () => {
+                inboundContent.style.display = 'none';
+                domesticContent.style.display = 'grid';
+                showDomesticBtn.classList.add('active');
+                showInboundBtn.classList.remove('active');
+            });
+
+            const challengeCards = document.querySelectorAll('.challenge-card');
+            const modal = document.getElementById('challengeModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            const closeModalBtn = document.getElementById('closeModalBtn');
+
+            challengeCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const challengeKey = card.dataset.challenge;
+                    const challengeData = tourismData.challenges[challengeKey];
+                    modalTitle.textContent = challengeData.title;
+                    modalBody.innerHTML = challengeData.content;
+                    modal.classList.add('visible');
+                });
+            });
+
+            const closeModal = () => modal.classList.remove('visible');
+            closeModalBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+            
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 80) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

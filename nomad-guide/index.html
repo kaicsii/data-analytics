@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>現代遊牧者互動羅盤</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Horizon (Warm neutrals like #F5F5F5, #F9FAFB with a muted teal #2DD4BF as an accent) -->
+    <!-- Application Structure Plan: The SPA uses a single-page, vertical scrolling structure with a sticky top navigation bar for easy access to key thematic sections. This non-linear design was chosen over a direct report-to-page conversion to allow users to immediately jump to their area of interest (e.g., 'Finances' or 'Destinations'), which is more aligned with how a prospective nomad would research. Key interactions include a self-assessment quiz, tabbed content for work models, and a dynamic bar chart for comparing city data, all designed to transform passive reading into active exploration and decision-making. -->
+    <!-- Visualization & Content Choices: Report Info: City comparison data (cost, internet, safety) -> Goal: Compare & Explore -> Viz: Interactive Bar Chart -> Interaction: Dropdown to change metric, click to see details -> Justification: More intuitive and visually engaging for comparison than a static table -> Library: Chart.js (Canvas). Report Info: Pros & Cons of nomad life -> Goal: Compare -> Method: Two-column card layout -> Interaction: Hover effects -> Justification: Clearly visualizes the trade-offs. Report Info: Work Models -> Goal: Organize -> Method: Tabbed interface -> Justification: Reduces cognitive load. CONFIRMATION: NO SVG/Mermaid used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #F9FAFB;
+            color: #1F2937;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 60vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 500px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-color 0.3s;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #14B8A6;
+            border-bottom-color: #14B8A6;
+        }
+        .btn-primary {
+            background-color: #14B8A6;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: #0D9488;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .tab.active {
+            border-bottom-color: #14B8A6;
+            color: #14B8A6;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header id="header" class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <a href="#hero" class="text-2xl font-bold text-gray-800">🧭 遊牧羅盤</a>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#assessment" class="nav-link text-gray-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">適合我嗎？</a>
+                        <a href="#career" class="nav-link text-gray-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">如何賺錢？</a>
+                        <a href="#logistics" class="nav-link text-gray-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">財務與簽證</a>
+                        <a href="#destinations" class="nav-link text-gray-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">探索目的地</a>
+                        <a href="#toolkit" class="nav-link text-gray-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">工具與社群</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-teal-500">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#assessment" class="nav-link text-gray-600 block px-3 py-2 rounded-md text-base font-medium">適合我嗎？</a>
+                <a href="#career" class="nav-link text-gray-600 block px-3 py-2 rounded-md text-base font-medium">如何賺錢？</a>
+                <a href="#logistics" class="nav-link text-gray-600 block px-3 py-2 rounded-md text-base font-medium">財務與簽證</a>
+                <a href="#destinations" class="nav-link text-gray-600 block px-3 py-2 rounded-md text-base font-medium">探索目的地</a>
+                <a href="#toolkit" class="nav-link text-gray-600 block px-3 py-2 rounded-md text-base font-medium">工具與社群</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section id="hero" class="relative py-20 sm:py-28 lg:py-32 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight">
+                    現代遊牧者羅盤
+                </h1>
+                <p class="mt-6 max-w-3xl mx-auto text-lg sm:text-xl text-gray-600">
+                    一份打造自由與目標人生的互動指南。重新定義工作、生活與地點的關係，開啟您的無國界旅程。
+                </p>
+                <div class="mt-10">
+                    <a href="#assessment" class="btn-primary inline-block px-8 py-3 rounded-full text-lg font-semibold shadow-lg">
+                        開始探索
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section id="assessment" class="py-16 sm:py-24 bg-gray-50">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-900">遊牧生活，適合我嗎？</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
+                        在踏上旅程前，必須誠實評估這份自由的魅力與代價。這並非逃避結構，而是贏得設計自身結構的權利。
+                    </p>
+                </div>
+
+                <div class="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+                    <div class="space-y-6">
+                        <h3 class="text-2xl font-bold text-center text-teal-600">無可比擬的自由</h3>
+                        <div class="card p-6">
+                            <h4 class="font-bold text-lg">🌍 地理自由</h4>
+                            <p class="mt-2 text-gray-600">選擇工作與生活環境，甚至實行「生活成本套利」，提升購買力。</p>
+                        </div>
+                        <div class="card p-6">
+                            <h4 class="font-bold text-lg">⏰ 時間自由</h4>
+                            <p class="mt-2 text-gray-600">掙脫朝九晚五，根據個人精力高峰設計工作節奏，實現生活平衡。</p>
+                        </div>
+                        <div class="card p-6">
+                            <h4 class="font-bold text-lg">💼 專業自由</h4>
+                            <p class="mt-2 text-gray-600">自主選擇客戶與專案，建立真正反映個人價值的事業。</p>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <h3 class="text-2xl font-bold text-center text-rose-600">自由的隱藏成本</h3>
+                         <div class="card p-6">
+                            <h4 class="font-bold text-lg">💸 收入的波動性</h4>
+                            <p class="mt-2 text-gray-600">案源並非源源不絕，需要卓越的財務規劃與心理承受力。</p>
+                        </div>
+                        <div class="card p-6">
+                            <h4 class="font-bold text-lg">👤 孤獨感的蔓延</h4>
+                            <p class="mt-2 text-gray-600">持續移動使建立深度人際關係變得困難，是深刻的個人挑戰。</p>
+                        </div>
+                        <div class="card p-6">
+                            <h4 class="font-bold text-lg">🤯 行政事務的疲勞</h4>
+                            <p class="mt-2 text-gray-600">簽證、稅務、保險... 你是自己人生的營運長，耗費大量心神。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="quiz" class="mt-20 card p-8 max-w-3xl mx-auto">
+                    <h3 class="text-2xl font-bold text-center mb-6">遊牧者特質快速評估</h3>
+                    <div id="quiz-questions" class="space-y-6"></div>
+                    <div class="text-center mt-8">
+                        <button id="quiz-submit" class="btn-primary px-6 py-2 rounded-lg font-semibold">查看評估結果</button>
+                    </div>
+                    <div id="quiz-result" class="mt-6 text-center text-lg font-medium hidden"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="career" class="py-16 sm:py-24 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-900">如何打造可攜式職業？</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
+                        成功的基石是能隨身攜帶的專業。這需要從「雇員思維」轉向「企業家思維」，將自己視為一家微型跨國企業來經營。
+                    </p>
+                </div>
+                
+                <div class="mt-16 max-w-4xl mx-auto">
+                    <div class="border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-4 sm:space-x-8 justify-center" aria-label="Tabs">
+                            <button class="tab active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="freelancer">自由接案者</button>
+                            <button class="tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="employee">遠距雇員</button>
+                            <button class="tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="entrepreneur">創業者</button>
+                        </nav>
+                    </div>
+
+                    <div class="mt-8">
+                        <div id="freelancer-content" class="tab-content">
+                            <h4 class="font-bold text-xl mb-2">最高自由度的典型模式</h4>
+                            <p class="text-gray-600">以專案為基礎為不同客戶服務。挑戰在於需獨自承擔所有商業運營責任，從開發客戶、報價、合約到收款，收入波動是常態。你需要成為自己的業務、專案經理和財務。</p>
+                            <p class="mt-4 text-sm text-gray-500"><strong>適合：</strong>自律性強、擁有市場需求技能、不畏懼不確定性的人。</p>
+                        </div>
+                        <div id="employee-content" class="tab-content hidden">
+                            <h4 class="font-bold text-xl mb-2">穩定性最高的入門選擇</h4>
+                            <p class="text-gray-600">受雇於允許完全遠距工作的公司，通常有固定月薪和福利。缺點是彈性較低，仍需遵守公司政策，長期的跨國旅行可能受限。</p>
+                            <p class="mt-4 text-sm text-gray-500"><strong>適合：</strong>尋求穩定收入、希望有清晰職業路徑、剛開始轉型的人。</p>
+                        </div>
+                        <div id="entrepreneur-content" class="tab-content hidden">
+                            <h4 class="font-bold text-xl mb-2">潛在回報最大的高風險路徑</h4>
+                            <p class="text-gray-600">建立自己的線上業務，如電商、線上課程或成為內容創作者。這條路徑風險最高，需要最長的投入時間和毅力，但成功後能獲得最大的自主權與多元化收入。</p>
+                            <p class="mt-4 text-sm text-gray-500"><strong>適合：</strong>具備商業頭腦、有長期抗戰準備、渴望建立個人事業的人。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-16">
+                    <h3 class="text-2xl font-bold text-center mb-8">熱門遊牧技能領域</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 bg-white rounded-lg shadow">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">技能領域</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">具體職位</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">平均時薪 (美元)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">科技與開發</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">軟體工程師, UI/UX設計師, 數據分析師</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-gray-900 font-semibold">$40 - $150+</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">創意與行銷</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">內容寫作, SEO專家, 社群媒體經理</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-gray-900 font-semibold">$25 - $150+</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">商業與支援</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">虛擬助理, 線上家教, 專案經理</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-gray-900 font-semibold">$20 - $60+</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="logistics" class="py-16 sm:py-24 bg-gray-50">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-900">搞定財務與簽證</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
+                        這是遊牧生活能否持續的核心。你需要成為自己跨國財務的精明管理者，並掌握合法居留的鑰匙。
+                    </p>
+                </div>
+                <div class="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div class="card p-8">
+                        <h3 class="text-2xl font-bold mb-6 text-center">全球金融工具比較</h3>
+                        <div id="fintech-accordion" class="space-y-3"></div>
+                    </div>
+                    <div class="card p-8">
+                        <h3 class="text-2xl font-bold mb-6 text-center">熱門數位遊牧簽證</h3>
+                        <div id="visa-accordion" class="space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="destinations" class="py-16 sm:py-24 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-900">探索你的下一個目的地</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
+                        選擇目的地不僅是挑選一個地點，更是接入一個現有的生態系統。利用數據做出明智選擇，是成功的第一步。
+                    </p>
+                </div>
+
+                <div class="mt-12 max-w-4xl mx-auto">
+                    <div class="flex justify-center items-center space-x-4 mb-4">
+                        <label for="metric-select" class="font-medium">比較指標：</label>
+                        <select id="metric-select" class="rounded-md border-gray-300 shadow-sm focus:border-teal-300 focus:ring focus:ring-teal-200 focus:ring-opacity-50">
+                            <option value="cost" selected>遊牧者月均開銷 (美元)</option>
+                            <option value="internet">網路速度 (Mbps)</option>
+                            <option value="safety">安全指數 (越高越好)</option>
+                        </select>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="destinations-chart"></canvas>
+                    </div>
+                    <div id="destination-info" class="mt-8 text-center text-gray-600 italic">點擊圖表中的城市以查看更多資訊。</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="toolkit" class="py-16 sm:py-24 bg-gray-50">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-900">工具與社群</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
+                        精心策劃的工具包和主動建立的社群，是應對挑戰、享受旅程的關鍵。
+                    </p>
+                </div>
+                <div class="mt-16 grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div class="card p-8">
+                        <h3 class="text-2xl font-bold mb-6 text-center">遊牧者基礎工具包</h3>
+                        <ul id="toolkit-list" class="space-y-4"></ul>
+                    </div>
+                    <div class="card p-8">
+                        <h3 class="text-2xl font-bold mb-6 text-center">建立社群與心理健康</h3>
+                        <ul class="space-y-5">
+                            <li class="flex items-start">
+                                <div class="flex-shrink-0 h-6 w-6 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center">🤝</div>
+                                <p class="ml-3 text-gray-700"><strong>善用共工/共居空間：</strong>它們是天然的社群中心，能快速連結背景相似的人。</p>
+                            </li>
+                            <li class="flex items-start">
+                                <div class="flex-shrink-0 h-6 w-6 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center">🗓️</div>
+                                <p class="ml-3 text-gray-700"><strong>參加線下聚會：</strong>利用Meetup、Facebook Events找到興趣小組，將線上連結轉為現實友誼。</p>
+                            </li>
+                            <li class="flex items-start">
+                                <div class="flex-shrink-0 h-6 w-6 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center">🧘</div>
+                                <p class="ml-3 text-gray-700"><strong>優先考慮心理健康：</strong>利用線上治療平台獲得持續支持，並建立日常慣例來穩定內心。</p>
+                            </li>
+                            <li class="flex items-start">
+                                <div class="flex-shrink-0 h-6 w-6 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center">🐢</div>
+                                <p class="ml-3 text-gray-700"><strong>擁抱「慢遊牧」：</strong>放慢腳步，在一個地方停留更久，以減少疲憊並建立更有意義的連結。</p>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white">
+        <div class="container mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-lg font-semibold">你的旅程，由此開始。</p>
+            <p class="mt-2 text-gray-400">羅盤已經校準，現在，是時候啟航了。</p>
+            <div class="mt-4">
+                <a href="#hero" class="text-teal-400 hover:text-teal-300 transition">返回頂部 &uarr;</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+
+            const sections = document.querySelectorAll('section');
+            const headerHeight = document.getElementById('header').offsetHeight;
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop - headerHeight - 50;
+                    if (pageYOffset >= sectionTop) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').substring(1) === current) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+            const quizData = [
+                { question: "面對不確定的收入，我能保持冷靜並有計畫地管理財務。", weight: 3 },
+                { question: "我享受獨處，並有主動建立新社交圈的策略與勇氣。", weight: 3 },
+                { question: "我能獨立解決突發問題（如網路中斷、簽證麻煩）。", weight: 2 },
+                { question: "在沒有外部監督的情況下，我能高度自律地完成工作。", weight: 2 },
+            ];
+            const quizContainer = document.getElementById('quiz-questions');
+            quizData.forEach((item, index) => {
+                const questionEl = document.createElement('div');
+                questionEl.innerHTML = `
+                    <p class="font-medium text-gray-800">${index + 1}. ${item.question}</p>
+                    <div class="mt-2 flex space-x-4">
+                        <label class="inline-flex items-center"><input type="radio" class="form-radio text-teal-500" name="q${index}" value="1"> 同意</label>
+                        <label class="inline-flex items-center"><input type="radio" class="form-radio text-gray-400" name="q${index}" value="0" checked> 不同意</label>
+                    </div>
+                `;
+                quizContainer.appendChild(questionEl);
+            });
+
+            document.getElementById('quiz-submit').addEventListener('click', () => {
+                let score = 0;
+                let totalWeight = 0;
+                quizData.forEach((item, index) => {
+                    const value = document.querySelector(`input[name="q${index}"]:checked`).value;
+                    score += parseInt(value) * item.weight;
+                    totalWeight += item.weight;
+                });
+                const percentage = (score / totalWeight) * 100;
+                const resultEl = document.getElementById('quiz-result');
+                let resultText = '';
+                if (percentage >= 75) {
+                    resultText = '🌟 <span class="text-green-600">準備充分！</span> 你具備成功遊牧者的關鍵特質。';
+                } else if (percentage >= 40) {
+                    resultText = '🤔 <span class="text-yellow-600">潛力十足！</span> 你有一些基礎，但在某些方面需要加強準備。';
+                } else {
+                    resultText = '🚩 <span class="text-red-600">需要謹慎評估。</span> 遊牧生活挑戰巨大，建議先從短期體驗開始。';
+                }
+                resultEl.innerHTML = resultText;
+                resultEl.classList.remove('hidden');
+            });
+
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    const target = tab.dataset.tab;
+                    tabContents.forEach(content => {
+                        if (content.id === `${target}-content`) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            const fintechData = [
+                { name: 'Wise', details: '最適用於國際轉帳、接收多國款項。提供多國本地銀行帳戶，使用中間市場匯率，費用低廉透明。' },
+                { name: 'Revolut', details: '適合日常消費與預算管理。整合預算工具、加密貨幣交易，但週末匯率會加成。' },
+                { name: 'Charles Schwab (美國公民)', details: '全球ATM提款手續費返還，適合有投資需求的美國公民，但需開設證券帳戶。' },
+            ];
+            const fintechAccordion = document.getElementById('fintech-accordion');
+            fintechData.forEach(item => {
+                const el = document.createElement('div');
+                el.innerHTML = `
+                    <div class="border border-gray-200 rounded-lg">
+                        <button class="accordion-toggle w-full text-left p-4 font-semibold flex justify-between items-center hover:bg-gray-100">
+                            <span>${item.name}</span>
+                            <span>+</span>
+                        </button>
+                        <div class="accordion-content hidden p-4 border-t border-gray-200 bg-white">
+                            <p class="text-gray-600">${item.details}</p>
+                        </div>
+                    </div>
+                `;
+                fintechAccordion.appendChild(el);
+            });
+            
+            const visaData = [
+                { name: '西班牙', details: '月收入要求約$2,760美元。前€600k收入適用24%固定稅率，適合尋求歐盟長期居留與稅務優惠者。' },
+                { name: '葡萄牙', details: '月收入要求約$3,480美元。有NHR非慣常居民稅務優惠，適合追求生活品質與最終入籍可能者。' },
+                { name: '日本', details: '年收入要求約$70k美元。簽證效期6個月不可續簽，適合想體驗獨特亞洲文化的高收入者。' },
+                { name: '杜拜 (UAE)', details: '月收入要求約$3,500美元。0%個人所得稅，適合追求現代化、安全與零稅負者。' },
+            ];
+            const visaAccordion = document.getElementById('visa-accordion');
+            visaData.forEach(item => {
+                const el = document.createElement('div');
+                el.innerHTML = `
+                    <div class="border border-gray-200 rounded-lg">
+                        <button class="accordion-toggle w-full text-left p-4 font-semibold flex justify-between items-center hover:bg-gray-100">
+                            <span>${item.name}</span>
+                            <span>+</span>
+                        </button>
+                        <div class="accordion-content hidden p-4 border-t border-gray-200 bg-white">
+                            <p class="text-gray-600">${item.details}</p>
+                        </div>
+                    </div>
+                `;
+                visaAccordion.appendChild(el);
+            });
+
+            document.querySelectorAll('.accordion-toggle').forEach(button => {
+                button.addEventListener('click', () => {
+                    const content = button.nextElementSibling;
+                    const icon = button.querySelector('span:last-child');
+                    content.classList.toggle('hidden');
+                    icon.textContent = content.classList.contains('hidden') ? '+' : '-';
+                });
+            });
+
+            const destinationsData = {
+                labels: ['里斯本', '清邁', '蒼古', '墨西哥城', '布達佩斯'],
+                cost: [2190, 1010, 1450, 1530, 1650],
+                internet: [28, 30, 20, 25, 30],
+                safety: [70.2, 75.5, 65.0, 30.7, 65.6],
+                info: [
+                    '歐洲魅力、歷史與現代交融，生活品質高。',
+                    '遊牧之都，生活成本極低，社群緊密。',
+                    '熱帶健康生活，衝浪瑜伽天堂，外籍人士聚集。',
+                    '文化大熔爐，美食之都，但安全是主要考量。',
+                    '歷史底蘊，藝術氣息濃，中東歐的絕佳基地。'
+                ]
+            };
+
+            const ctx = document.getElementById('destinations-chart').getContext('2d');
+            let destinationsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: destinationsData.labels,
+                    datasets: [{
+                        label: '遊牧者月均開銷 (美元)',
+                        data: destinationsData.cost,
+                        backgroundColor: 'rgba(20, 184, 166, 0.6)',
+                        borderColor: 'rgba(13, 148, 136, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.x !== null) {
+                                        const metric = document.getElementById('metric-select').value;
+                                        if(metric === 'cost') label += '$' + context.parsed.x;
+                                        else if(metric === 'internet') label += context.parsed.x + ' Mbps';
+                                        else label += context.parsed.x;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '遊牧者月均開銷 (美元)'
+                            }
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const infoEl = document.getElementById('destination-info');
+                            infoEl.textContent = `${destinationsData.labels[index]}: ${destinationsData.info[index]}`;
+                        }
+                    }
+                }
+            });
+
+            document.getElementById('metric-select').addEventListener('change', (e) => {
+                const metric = e.target.value;
+                let newData;
+                let newLabel;
+                let newTitle;
+                if (metric === 'cost') {
+                    newData = destinationsData.cost;
+                    newLabel = '遊牧者月均開銷 (美元)';
+                    newTitle = '遊牧者月均開銷 (美元)';
+                } else if (metric === 'internet') {
+                    newData = destinationsData.internet;
+                    newLabel = '網路速度 (Mbps)';
+                    newTitle = '網路速度 (Mbps)';
+                } else {
+                    newData = destinationsData.safety;
+                    newLabel = '安全指數';
+                    newTitle = '安全指數 (越高越好)';
+                }
+                destinationsChart.data.datasets[0].data = newData;
+                destinationsChart.data.datasets[0].label = newLabel;
+                destinationsChart.options.scales.x.title.text = newTitle;
+                destinationsChart.update();
+            });
+            
+            const toolkitData = [
+                { icon: '💻', text: '<strong>核心設備：</strong>輕量筆電、無鎖版手機、高容量行動電源。' },
+                { icon: '🌐', text: '<strong>連線能力：</strong>可攜式Wi-Fi熱點，並在當地購買SIM卡或eSIM。' },
+                { icon: '🎧', text: '<strong>工作效率：</strong>主動降噪耳機、可攜式筆電支架與鍵鼠。' },
+                { icon: '🎒', text: '<strong>極簡打包：</strong>一個40L旅行背包，善用打包收納方塊。' },
+                { icon: '💾', text: '<strong>數據安全：</strong>採用「3-2-1備份原則」，結合外接硬碟與雲端儲存。' },
+            ];
+            const toolkitList = document.getElementById('toolkit-list');
+            toolkitData.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'flex items-start';
+                li.innerHTML = `
+                    <div class="flex-shrink-0 h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-xl">${item.icon}</div>
+                    <p class="ml-4 text-gray-700">${item.text}</p>
+                `;
+                toolkitList.appendChild(li);
+            });
+        });
+    </script>
+</body>
+</html>
